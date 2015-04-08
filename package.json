@@ -1,0 +1,29 @@
+{
+  "name": "bmsjs",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "bokuweb",
+  "license": "CC BY-NC-ND 4.0",
+  "devDependencies": {
+    "browserify": "~9.0.3",
+    "gulp": "~3.8.11",
+    "vinyl-source-stream": "~1.1.0",
+    "coffee-script": "~1.9.1",
+    "gulp-connect": "~2.2.0",
+    "gulp-jsmin": "~0.1.4",
+    "gulp-rename": "~1.2.0",
+    "gulp-mocha-phantomjs": "~0.5.3",
+    "coffeeify": "~1.0.0",
+    "gulp-coffeelint": "~0.4.0"
+  },
+  "browser": {
+    "jquery": "./bower_components/jquery/dist/jquery.js"
+  },
+  "dependencies": {
+    "gulp-cson": "~0.3.0"
+  }
+}
