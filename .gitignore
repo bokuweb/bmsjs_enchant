@@ -1,9 +1,5 @@
 node_modules/
 build/
-gulpfile.js
 bower_components/
 capture/
-app/#main.coffee#
-app/.#main.coffee
-test/test_all.js
 bms/
