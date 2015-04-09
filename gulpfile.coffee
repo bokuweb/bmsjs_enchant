@@ -33,7 +33,7 @@ gulp.task 'testBuild' , ->
     .transform 'coffeeify'
     .bundle()
     .pipe source 'test_all.js'
-    .pipe gulp.dest 'test'
+    .pipe gulp.dest './test'
 
   gulp.src './test/js/*.cson'
     .pipe cson()
