@@ -229,4 +229,4 @@ class BmsParser
     @bms.data.reduce ( (t, d) -> t +
       d.note.key.reduce ((nt, k) -> nt + k.id.length), 0), 0
 
-module.exports = bmsParser
+module.exports = BmsParser

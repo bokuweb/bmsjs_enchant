@@ -1,70 +1,413 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-require('./spec_gamesys');
 
-require('./spec_timer');
-
-require('./spec_stats');
-
-require('./spec_gauge');
-
-require('./spec_resource');
-
-require('./spec_eventObserver');
-
-require('./spec_fallObj');
-
-require('./spec_measureNodes');
-
-require('./spec_keyNotifier');
-
-require('./spec_bpmIndicator');
-
-require('./spec_keydownEffect');
-
-require('./spec_judge');
-
-require('./spec_notes');
+/*
+require './spec_gamesys'
+require './spec_timer'
+require './spec_stats'
+require './spec_gauge'
+require './spec_resource'
+require './spec_eventObserver'
+require './spec_fallObj'
+require './spec_measureNodes'
+require './spec_keyNotifier'
+require './spec_bpmIndicator'
+require './spec_keydownEffect'
+require './spec_judge'
+require './spec_notes'
+ */
+require('./spec_loader');
 
 
 
-},{"./spec_bpmIndicator":17,"./spec_eventObserver":18,"./spec_fallObj":19,"./spec_gamesys":20,"./spec_gauge":21,"./spec_judge":22,"./spec_keyNotifier":23,"./spec_keydownEffect":24,"./spec_measureNodes":25,"./spec_notes":26,"./spec_resource":27,"./spec_stats":28,"./spec_timer":29}],2:[function(require,module,exports){
-var BpmIndicator;
+},{"./spec_loader":7}],2:[function(require,module,exports){
+var BmsParser;
 
-BpmIndicator = (function() {
-  function BpmIndicator(_sys, _timer, _bpms) {
-    this._sys = _sys;
-    this._timer = _timer;
-    this._bpms = _bpms;
+BmsParser = (function() {
+  var _bmpTiming, _calcTiming, _calcTotalNote, _createBar, _expand, _lcm, _merge, _modifyAfterParse, _noteTiming, _parse, _parseBMP, _parseChannelMsg, _parseProperty, _parseWAV, _storeBPM, _storeData, _storeWAV, _wavTiming;
+
+  function BmsParser() {
+    this.bms = {
+      player: null,
+      genre: null,
+      title: null,
+      artist: null,
+      bpm: null,
+      playLevel: null,
+      rank: null,
+      total: null,
+      sategFile: null,
+      keyNum: null,
+      difficulty: null,
+      wav: {},
+      bmp: {},
+      data: [],
+      totalNote: 0
+    };
+    this.wavMessages = [];
   }
 
-  BpmIndicator.prototype.init = function(res) {
-    this._index = 0;
-    this._bpmLabel = this._sys.createLabel(res.bpmLabel.font, res.bpmLabel.color, res.bpmLabel.align);
-    this._bpmLabel.x = res.bpmLabel.x;
-    this._bpmLabel.y = res.bpmLabel.y;
-    this._sys.setText(this._bpmLabel, this._bpms[0]);
-    this._sys.addChild(this._sys.getCurrentScene(), this._bpmLabel, res.bpmLabel.z);
-    return this._sys.setScheduler(this._update.bind(this, this._bpmLabel), this._bpmLabel);
+  BmsParser.prototype.parse = function(bms_text) {
+    var j, len, ref, row;
+    ref = bms_text.split('\n');
+    for (j = 0, len = ref.length; j < len; j++) {
+      row = ref[j];
+      _parse.call(this, row);
+    }
+    _modifyAfterParse.call(this);
+    this.bms.totalNote = _calcTotalNote.call(this);
+    return this.bms;
   };
 
-  BpmIndicator.prototype.remove = function() {
-    return this._sys.removeChild(this._sys.getCurrentScene(), this._bpmLabel);
-  };
-
-  BpmIndicator.prototype._update = function(label) {
-    var ref, time;
-    time = this._timer.get();
-    if (time > ((ref = this._bpms[this._index]) != null ? ref.timing : void 0)) {
-      this._sys.setText(label, this._bpms[this._index].val);
-      return this._index++;
+  _parse = function(row) {
+    var bmp, channelMsg, property, wav;
+    if (row.substring(0, 1) !== '#') {
+      return;
+    }
+    wav = /^#WAV(\w{2}) +(.*)/.exec(row);
+    if (wav != null) {
+      _parseWAV.call(this, wav);
+      return;
+    }
+    bmp = /^#BMP(\w{2}) +(.*)/.exec(row);
+    if (bmp != null) {
+      _parseBMP.call(this, bmp);
+      return;
+    }
+    channelMsg = /^#([0-9]{3})([0-9]{2}):([\w\.]+)/.exec(row);
+    if (channelMsg != null) {
+      _parseChannelMsg.call(this, channelMsg);
+      return;
+    }
+    property = /^#(\w+) +(.+)/.exec(row);
+    if (property != null) {
+      _parseProperty.call(this, property);
     }
   };
 
-  return BpmIndicator;
+  _parseWAV = function(wav) {
+    var index;
+    index = parseInt(wav[1], 36);
+    return this.bms.wav[index] = wav[2];
+  };
+
+  _parseBMP = function(bmp) {
+    var index;
+    index = parseInt(bmp[1], 36);
+    return this.bms.bmp[index] = bmp[2];
+  };
+
+  _parseProperty = function(property) {
+    return this.bms[property[1].toLowerCase()] = property[2];
+  };
+
+  _createBar = function() {
+    var _;
+    return {
+      timing: 0.0,
+      wav: {
+        message: [],
+        timing: [],
+        id: []
+      },
+      bmp: {
+        message: [],
+        timing: [],
+        id: []
+      },
+      bpm: {
+        message: [],
+        timing: [],
+        val: []
+      },
+      meter: 1.0,
+      note: {
+        key: (function() {
+          var j, results;
+          results = [];
+          for (_ = j = 0; j <= 8; _ = ++j) {
+            results.push({
+              message: [],
+              timing: [],
+              id: []
+            });
+          }
+          return results;
+        })()
+      }
+    };
+  };
+
+  _parseChannelMsg = function(msg) {
+    var ch, data, measureNum, meter;
+    measureNum = parseInt(msg[1]);
+    ch = parseInt(msg[2]);
+    data = msg[3];
+    if (this.bms.data[measureNum] == null) {
+      this.bms.data[measureNum] = _createBar();
+    }
+    switch (ch) {
+      case 1:
+        return _storeWAV.call(this, data, this.bms.data[measureNum].wav, measureNum);
+      case 2:
+        meter = parseFloat(data);
+        if (meter > 0) {
+          return this.bms.data[measureNum].meter = meter;
+        }
+        break;
+      case 3:
+        return _storeBPM.call(this, data, this.bms.data[measureNum].bpm, measureNum);
+      case 4:
+        return _storeData.call(this, data, this.bms.data[measureNum].bmp, measureNum);
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+      case 15:
+        return _storeData.call(this, data, this.bms.data[measureNum].note.key[ch - 11], measureNum);
+      case 16:
+      case 17:
+        return _storeData.call(this, data, this.bms.data[measureNum].note.key[ch - 9], measureNum);
+      case 18:
+      case 19:
+        return _storeData.call(this, data, this.bms.data[measureNum].note.key[ch - 13], measureNum);
+      default:
+        return console.log("else ch" + ch);
+    }
+  };
+
+  _storeWAV = function(msg, array, measureNum) {
+    var i;
+    if (this.wavMessages[measureNum] == null) {
+      this.wavMessages[measureNum] = [];
+    }
+    return this.wavMessages[measureNum].push((function() {
+      var j, ref, results;
+      results = [];
+      for (i = j = 0, ref = msg.length - 1; j <= ref; i = j += 2) {
+        results.push(parseInt(msg.slice(i, +(i + 1) + 1 || 9e9), 36));
+      }
+      return results;
+    })());
+  };
+
+  _storeData = function(msg, array, measureNum) {
+    var data, i;
+    data = (function() {
+      var j, ref, results;
+      results = [];
+      for (i = j = 0, ref = msg.length - 1; j <= ref; i = j += 2) {
+        results.push(parseInt(msg.slice(i, +(i + 1) + 1 || 9e9), 36));
+      }
+      return results;
+    })();
+    return array.message = _merge(array.message, data);
+  };
+
+  _storeBPM = function(msg, bpm, measureNum) {
+    var i;
+    return bpm.message = (function() {
+      var j, ref, results;
+      results = [];
+      for (i = j = 0, ref = msg.length - 1; j <= ref; i = j += 2) {
+        results.push(parseInt(msg.slice(i, +(i + 1) + 1 || 9e9), 16));
+      }
+      return results;
+    })();
+  };
+
+  _lcm = function(a, b) {
+    var gcm;
+    gcm = function(x, y) {
+      if (y === 0) {
+        return x;
+      } else {
+        return gcm(y, x % y);
+      }
+    };
+    return a / gcm(a, b) * b;
+  };
+
+  _expand = function(array, length) {
+    var _, i, interval;
+    if (array.length === 0) {
+      return (function() {
+        var j, ref, results;
+        results = [];
+        for (_ = j = 0, ref = length - 1; 0 <= ref ? j <= ref : j >= ref; _ = 0 <= ref ? ++j : --j) {
+          results.push(0);
+        }
+        return results;
+      })();
+    }
+    interval = length / array.length;
+    return (function() {
+      var j, ref, results;
+      results = [];
+      for (i = j = 0, ref = length - 1; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
+        results.push(i % interval === 0 ? array[i / interval] : 0);
+      }
+      return results;
+    })();
+  };
+
+  _merge = function(ary1, ary2) {
+    var i, j, lcm, len, ref, ret, value;
+    if (ary1.length === 0) {
+      return ary2;
+    }
+    lcm = _lcm(ary1.length, ary2.length);
+    ret = _expand(ary1, lcm);
+    ref = _expand(ary2, lcm);
+    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+      value = ref[i];
+      if (value === 0) {
+        continue;
+      }
+      ret[i] = value;
+    }
+    return ret;
+  };
+
+  _modifyAfterParse = function() {
+    var _, bar, bpm, i, j, l, len, ref, results, time, val;
+    bpm = this.bms.bpm;
+    time = 0;
+    ref = this.bms.data;
+    results = [];
+    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+      bar = ref[i];
+      if (bar == null) {
+        this.bms.data[i] = _createBar();
+        this.bms.data[i].timing = time;
+        time += 240000 / bpm;
+        continue;
+      }
+      bar.timing = time;
+      if (bar.bpm.message.length === 0) {
+        bar.bpm.message = [0];
+      }
+      _noteTiming(time, bar, bpm);
+      _bmpTiming(time, bar, bpm);
+      _wavTiming(time, bar, bpm, this.wavMessages[i]);
+      l = bar.bpm.message.length;
+      results.push((function() {
+        var len1, m, ref1, results1;
+        ref1 = bar.bpm.message;
+        results1 = [];
+        for (_ = m = 0, len1 = ref1.length; m < len1; _ = ++m) {
+          val = ref1[_];
+          if (val !== 0) {
+            bar.bpm.val.push(val);
+            bar.bpm.timing.push(time);
+            bpm = val;
+          }
+          results1.push(time += (240000 / bpm) * (1 / l) * bar.meter);
+        }
+        return results1;
+      })());
+    }
+    return results;
+  };
+
+  _calcTiming = function(time, objects, bpmobj, bpm, meter) {
+    var b, bl, bpms, i, j, lcm, len, objs, ol, results, t, val;
+    bl = bpmobj.message.length;
+    ol = objects.message.length;
+    lcm = _lcm(bl, ol);
+    bpms = _expand(bpmobj.message, lcm);
+    objs = _expand(objects.message, lcm);
+    t = 0;
+    b = bpm;
+    objects.timing = [];
+    objects.id = [];
+    results = [];
+    for (i = j = 0, len = bpms.length; j < len; i = ++j) {
+      val = bpms[i];
+      if (objs[i] !== 0) {
+        objects.timing.push(time + t);
+        objects.id.push(objs[i]);
+      }
+      if (val !== 0) {
+        b = val;
+      }
+      results.push(t += (240000 / b) * (1 / lcm) * meter);
+    }
+    return results;
+  };
+
+  _noteTiming = function(time, bar, bpm) {
+    var j, l, len, n, ref, results;
+    l = bar.bpm.message.length;
+    ref = bar.note.key;
+    results = [];
+    for (j = 0, len = ref.length; j < len; j++) {
+      n = ref[j];
+      if (n.message.length !== 0) {
+        results.push(_calcTiming(time, n, bar.bpm, bpm, bar.meter));
+      }
+    }
+    return results;
+  };
+
+  _bmpTiming = function(time, bar, bpm) {
+    return _calcTiming(time, bar.bmp, bar.bpm, bpm, bar.meter);
+  };
+
+  _wavTiming = function(time, bar, bpm, wavss) {
+    var b, bpms, i, j, l, lcm, len, len1, len2, m, o, ref, result, results, t, val, w, wavs, wl, ws;
+    if (wavss == null) {
+      console.log('wavss is null');
+      return;
+    }
+    l = bar.bpm.message.length;
+    result = [];
+    for (j = 0, len = wavss.length; j < len; j++) {
+      ws = wavss[j];
+      wl = ws.length;
+      lcm = _lcm(l, wl);
+      bpms = _expand(bar.bpm.message, lcm);
+      wavs = _expand(ws, lcm);
+      t = 0;
+      b = bpm;
+      for (i = m = 0, len1 = bpms.length; m < len1; i = ++m) {
+        val = bpms[i];
+        if (wavs[i] !== 0) {
+          result.push({
+            timing: time + t,
+            id: wavs[i]
+          });
+        }
+        if (val !== 0) {
+          b = val;
+        }
+        t += (240000 / b) * (1 / lcm) * bar.meter;
+      }
+    }
+    ref = result.sort(function(a, b) {
+      return a['timing'] - b['timing'];
+    });
+    results = [];
+    for (o = 0, len2 = ref.length; o < len2; o++) {
+      w = ref[o];
+      bar.wav.timing.push(w.timing);
+      results.push(bar.wav.id.push(w.id));
+    }
+    return results;
+  };
+
+  _calcTotalNote = function() {
+    return this.bms.data.reduce((function(t, d) {
+      return t + d.note.key.reduce((function(nt, k) {
+        return nt + k.id.length;
+      }), 0);
+    }), 0);
+  };
+
+  return BmsParser;
 
 })();
 
-module.exports = BpmIndicator;
+module.exports = BmsParser;
 
 
 
@@ -7135,108 +7478,6 @@ enchant.Tween = enchant.Class.create(enchant.Action, {
 }(window));
 
 },{}],4:[function(require,module,exports){
-var EventObserver;
-
-EventObserver = (function() {
-  function EventObserver() {
-    this._listeners = [];
-  }
-
-  EventObserver.prototype.on = function(name, callback, params) {
-    return this._listeners.push({
-      name: name,
-      callback: callback,
-      params: params
-    });
-  };
-
-  EventObserver.prototype.trigger = function(name, data) {
-    var i, len, listener, ref;
-    ref = this._listeners;
-    for (i = 0, len = ref.length; i < len; i++) {
-      listener = ref[i];
-      if (listener.name === name) {
-        listener.callback(name, data, listener.params);
-      }
-    }
-  };
-
-  return EventObserver;
-
-})();
-
-module.exports = EventObserver;
-
-
-
-},{}],5:[function(require,module,exports){
-var FallObj;
-
-FallObj = (function() {
-  function FallObj() {}
-
-  FallObj.prototype._calcSpeed = function(bpm, fallDistance) {
-    var measureTime;
-    measureTime = 240000 / bpm;
-    return fallDistance / measureTime;
-  };
-
-  FallObj.prototype._appendFallParams = function(obj, bpms, time, fallDistance) {
-    var diffDistance, i, j, k, l, len, len1, len2, m, previousBpm, ref, ref1, ref2, v;
-    previousBpm = 0;
-    obj.dstY = [];
-    obj.index = 0;
-    obj.speed = [];
-    obj.bpm = {
-      timing: [],
-      val: []
-    };
-    for (i = j = 0, len = bpms.length; j < len; i = ++j) {
-      v = bpms[i];
-      if (!((time < (ref = v.timing) && ref < obj.timing))) {
-        continue;
-      }
-      obj.bpm.timing.push(v.timing);
-      obj.bpm.val.push(v.val);
-    }
-    if (bpms[0].timing > time) {
-      previousBpm = bpms[0].val;
-    } else {
-      for (k = 0, len1 = bpms.length; k < len1; k++) {
-        v = bpms[k];
-        if (v.timing <= time) {
-          previousBpm = v.val;
-        }
-      }
-    }
-    obj.dstY[obj.bpm.timing.length] = fallDistance;
-    obj.bpm.timing.push(obj.timing);
-    ref1 = obj.bpm.timing;
-    for (i = l = ref1.length - 1; l >= 0; i = l += -1) {
-      v = ref1[i];
-      if (!(i < obj.bpm.timing.length - 1)) {
-        continue;
-      }
-      diffDistance = (obj.bpm.timing[i + 1] - v) * this._calcSpeed(obj.bpm.val[i], fallDistance);
-      obj.dstY[i] = obj.dstY[i + 1] - diffDistance;
-    }
-    obj.bpm.val.splice(0, 0, previousBpm);
-    ref2 = obj.bpm.val;
-    for (m = 0, len2 = ref2.length; m < len2; m++) {
-      v = ref2[m];
-      obj.speed.push(this._calcSpeed(v, fallDistance));
-    }
-  };
-
-  return FallObj;
-
-})();
-
-module.exports = FallObj;
-
-
-
-},{}],6:[function(require,module,exports){
 var GameSys;
 
 GameSys = (function() {
@@ -7498,808 +7739,69 @@ module.exports = GameSys;
 
 
 
-},{"./enchant":3,"jquery":16}],7:[function(require,module,exports){
-var Gauge;
-
-Gauge = (function() {
-  function Gauge(_sys) {
-    this._sys = _sys;
-    this._gaugeSprite = [];
-  }
-
-  Gauge.prototype.init = function(res, config) {
-    var i, j, ref;
-    this._initRate = this._rate = config.initRate;
-    this._greatIncVal = config.greatIncVal;
-    this._goodIncVal = config.goodIncVal;
-    this._badDecVal = config.badDecVal;
-    this._poorDecVal = config.poorDecVal;
-    this._num = config.num;
-    this._clearVal = config.clearVal;
-    for (i = j = 0, ref = this._num; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      this._gaugeSprite[i] = this._sys.createSprite(res.gaugeImage.width, res.gaugeImage.height, res.gaugeImage.src);
-      this._gaugeSprite[i].x = res.gaugeImage.x + i * res.gaugeImage.width;
-      this._gaugeSprite[i].y = res.gaugeImage.y;
-      this._sys.addChild(this._sys.getCurrentScene(), this._gaugeSprite[i], this._gaugeSprite[i].z);
-    }
-    this._rateLabel = this._sys.createLabel(res.rateLabel.font, res.rateLabel.color, res.rateLabel.align);
-    this._rateLabel.x = res.rateLabel.x;
-    this._rateLabel.y = res.rateLabel.y;
-    this._sys.setText(this._rateLabel, ~~this._rate + "%");
-    this._sys.addChild(this._sys.getCurrentScene(), this._rateLabel, res.rateLabel.z);
-    return this._render();
-  };
-
-  Gauge.prototype.get = function() {
-    return ~~(this._rate.toFixed());
-  };
-
-  Gauge.prototype.start = function(period) {
-    return this._intervalId = setInterval(this._render, period);
-  };
-
-  Gauge.prototype.stop = function() {
-    return clearInterval(this._intervalId);
-  };
-
-  Gauge.prototype.clear = function() {
-    this._rate = this._initRate;
-    return this._render();
-  };
-
-  Gauge.prototype.remove = function() {
-    var i, j, ref;
-    this.stop();
-    for (i = j = 0, ref = this._num; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      this._sys.removeChild(this._sys.getCurrentScene(), this._gaugeSprite[i]);
-    }
-    return this._sys.removeChild(this._sys.getCurrentScene(), this._rateLabel);
-  };
-
-  Gauge.prototype.update = function(judge) {
-    switch (judge) {
-      case "pgreat":
-      case "great":
-        this._rate = this._rate + this._greatIncVal > 100 ? 100 : this._rate + this._greatIncVal;
-        break;
-      case "good":
-        this._rate = this._rate + this._goodIncVal > 100 ? 100 : this._rate + this._goodIncVal;
-        break;
-      case "bad":
-        this._rate = this._rate - this._badDecVal < 2 ? 2 : this._rate - this._badDecVal;
-        break;
-      case "poor":
-        this._rate = this._rate - this._poorDecVal < 2 ? 2 : this._rate - this._poorDecVal;
-        break;
-      default:
-        this._rate = this._rate - this._poorDecVal < 2 ? 2 : this._rate - this._poorDecVal;
-    }
-    this._sys.setText(this._rateLabel, ~~(this._rate.toFixed()) + "%");
-    return this._render();
-  };
-
-  Gauge.prototype._render = function() {
-    var i, j, ref, ref1, ref2;
-    for (i = j = 0, ref = this._num; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      if (i > this._clearVal) {
-        if ((this._rate - 6 <= (ref1 = i * 2) && ref1 < this._rate - 2)) {
-          this._sys.setFrame(this._gaugeSprite[i], ~~(Math.random() * 2) * 2);
-        } else if (this._rate - 2 >= i * 2) {
-          this._sys.setFrame(this._gaugeSprite[i], 0);
-        } else {
-          this._sys.setFrame(this._gaugeSprite[i], 2);
-        }
-      } else {
-        if ((this._rate - 6 <= (ref2 = i * 2) && ref2 < this._rate - 2)) {
-          this._sys.setFrame(this._gaugeSprite[i], ~~(Math.random() * 2) * 2 + 1);
-        } else if (this._rate - 2 >= i * 2) {
-          this._sys.setFrame(this._gaugeSprite[i], 1);
-        } else {
-          this._sys.setFrame(this._gaugeSprite[i], 3);
-        }
-      }
-    }
-  };
-
-  return Gauge;
-
-})();
-
-module.exports = Gauge;
-
-
-
-},{}],8:[function(require,module,exports){
-var Judge;
-
-Judge = (function() {
-  function Judge(_config) {
-    this._config = _config;
-  }
-
-  Judge.prototype.exec = function(diffTime) {
-    if ((-this._config.pgreat < diffTime && diffTime < this._config.pgreat)) {
-      return "pgreat";
-    }
-    if ((-this._config.great < diffTime && diffTime < this._config.great)) {
-      return "great";
-    }
-    if ((-this._config.good < diffTime && diffTime < this._config.good)) {
-      return "good";
-    }
-    if ((-this._config.bad < diffTime && diffTime < this._config.bad)) {
-      return "bad";
-    }
-    return "poor";
-  };
-
-  return Judge;
-
-})();
-
-module.exports = Judge;
-
-
-
-},{}],9:[function(require,module,exports){
-var $, EventObserver, KeyNotifier,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-EventObserver = require('./eventObserver');
+},{"./enchant":3,"jquery":6}],5:[function(require,module,exports){
+var $, Loader, Parser;
 
 $ = require('jquery');
 
-KeyNotifier = (function(superClass) {
-  extend(KeyNotifier, superClass);
+Parser = require('./bmsParser');
 
-  function KeyNotifier(_timer) {
-    this._timer = _timer;
-    this._checkKey = bind(this._checkKey, this);
-    KeyNotifier.__super__.constructor.call(this);
-  }
-
-  KeyNotifier.prototype.start = function() {
-    return document.addEventListener('keydown', this._checkKey, false);
-  };
-
-  KeyNotifier.prototype.stop = function() {
-    return document.removeEventListener('keydown', this._checkKey, false);
-  };
-
-  KeyNotifier.prototype.addListener = function(name, listener, id) {
-    return this.on(name, listener, id);
-  };
-
-  KeyNotifier.prototype._checkKey = function(e) {
-    var time;
-    time = this._timer.get();
-    return this.trigger(e.keyCode, time);
-  };
-
-  return KeyNotifier;
-
-})(EventObserver);
-
-module.exports = KeyNotifier;
-
-
-
-},{"./eventObserver":4,"jquery":16}],10:[function(require,module,exports){
-var KeydownEffect;
-
-KeydownEffect = (function() {
-  function KeydownEffect(_sys) {
+Loader = (function() {
+  function Loader(_sys) {
     this._sys = _sys;
-    this._KeyDownEffect = [];
   }
 
-  KeydownEffect.prototype.init = function(res, xArr) {
-    var i, j, len, v;
-    this._KeyDownEffect.length = 0;
-    for (i = j = 0, len = xArr.length; j < len; i = ++j) {
-      v = xArr[i];
-      switch (i) {
-        case 0:
-        case 2:
-        case 4:
-        case 6:
-          this._KeyDownEffect[i] = this._sys.createSprite(res.whiteKeydownImage.width, res.whiteKeydownImage.height, res.whiteKeydownImage.src);
-          this._KeyDownEffect[i].height = res.whiteKeydownImage.height;
-          this._KeyDownEffect[i].width = res.whiteKeydownImage.width;
-          this._KeyDownEffect[i].x = v;
-          break;
-        case 1:
-        case 3:
-        case 5:
-          this._KeyDownEffect[i] = this._sys.createSprite(res.blackKeydownImage.width, res.blackKeydownImage.height, res.blackKeydownImage.src);
-          this._KeyDownEffect[i].height = res.blackKeydownImage.height;
-          this._KeyDownEffect[i].width = res.blackKeydownImage.width;
-          this._KeyDownEffect[i].x = v;
-          break;
-        case 7:
-          this._KeyDownEffect[i] = this._sys.createSprite(res.turntableKeydownImage.width, res.turntableKeydownImage.height, res.turntableKeydownImage.src);
-          this._KeyDownEffect[i].height = res.turntableKeydownImage.height;
-          this._KeyDownEffect[i].width = res.turntableKeydownImage.width;
-          this._KeyDownEffect[i].x = v;
-          break;
-      }
-      this._KeyDownEffect[i].y = res.y;
-      this._sys.addChild(this._sys.getCurrentScene(), this._KeyDownEffect[i], res.z);
-      this._sys.setOpacity(this._KeyDownEffect[i], 0);
-    }
-  };
-
-  KeydownEffect.prototype.show = function(id) {
-    this._sys.setOpacity(this._KeyDownEffect[id], 1);
-    return this._sys.setScheduler(this._fadeOut.bind(this, this._KeyDownEffect[id]), this._KeyDownEffect[id]);
-  };
-
-  KeydownEffect.prototype.remove = function() {
-    var j, len, ref, results, v;
-    ref = this._KeyDownEffect;
-    results = [];
-    for (j = 0, len = ref.length; j < len; j++) {
-      v = ref[j];
-      results.push(this._sys.removeChild(this._sys.getCurrentScene(), v));
-    }
-    return results;
-  };
-
-  KeydownEffect.prototype._fadeOut = function(effect) {
-    var opacity;
-    opacity = this._sys.getOpacity(effect);
-    if (opacity > 0) {
-      opacity -= 0.08;
-      if (opacity <= 0) {
-        this._sys.setOpacity(effect, 0);
-        return this._sys.clearScheduler(effect);
-      } else {
-        return this._sys.setOpacity(effect, opacity);
-      }
-    }
-  };
-
-  return KeydownEffect;
-
-})();
-
-module.exports = KeydownEffect;
-
-
-
-},{}],11:[function(require,module,exports){
-var EventObserver, FallObj, MeasureNodes,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-EventObserver = require('./eventObserver');
-
-FallObj = require('./fallObj');
-
-MeasureNodes = (function(superClass) {
-  extend(MeasureNodes, superClass);
-
-  function MeasureNodes(_sys, _timer) {
-    this._sys = _sys;
-    this._timer = _timer;
-    this._add = bind(this._add, this);
-    this._index = 0;
-    this._notifier = new EventObserver();
-    this._nodes = [];
-    this._genTime = [];
-  }
-
-  MeasureNodes.prototype.init = function(res, bpms, nodes) {
-    var i, j, len, node, time, v;
-    time = 0;
-    this._nodes.length = 0;
-    this._genTime.length = 0;
-    for (i = j = 0, len = nodes.length; j < len; i = ++j) {
-      v = nodes[i];
-      node = this._sys.createSprite(res.nodeImage.width, res.nodeImage.height, res.nodeImage.src);
-      node.timing = v.timing;
-      node.x = res.nodeImage.x;
-      node.y = res.nodeImage.y;
-      this._appendFallParams(node, bpms, time, res.fallDist);
-      this._genTime.push(time);
-      time = this._getGenTime(node, res.fallDist);
-      this._nodes.push(node);
-    }
-    return this._genTime;
-  };
-
-  MeasureNodes.prototype.start = function() {
-    return this._scheduleId = this._sys.setScheduler(this._add);
-  };
-
-  MeasureNodes.prototype.stop = function() {
-    return this._sys.clearScheduler(this._scheduleId);
-  };
-
-  MeasureNodes.prototype.addListener = function(name, listner) {
-    return this._notifier.on(name, listner);
-  };
-
-  MeasureNodes.prototype._getGenTime = function(obj, fallDist) {
-    var i, j, len, ref, v;
-    ref = obj.dstY;
-    for (i = j = 0, len = ref.length; j < len; i = ++j) {
-      v = ref[i];
-      if (v > 0) {
-        return ~~(obj.bpm.timing[i] - (v / this._calcSpeed(obj.bpm.val[i], fallDist)));
-      }
-    }
-    return 0;
-  };
-
-  MeasureNodes.prototype._add = function() {
-    if (this._genTime[this._index] == null) {
-      return;
-    }
-    if (!(this._genTime[this._index] <= this._timer.get())) {
-      return;
-    }
-    this._sys.addChild(this._sys.getCurrentScene(), this._nodes[this._index]);
-    this._sys.setScheduler(this._update.bind(this, this._nodes[this._index]), this._nodes[this._index]);
-    return this._index++;
-  };
-
-  MeasureNodes.prototype._update = function(node) {
-    var diffDist, diffTime, time;
-    time = this._timer.get();
-    while (time > node.bpm.timing[node.index]) {
-      if (node.index < node.bpm.timing.length - 1) {
-        node.index++;
-      } else {
-        break;
-      }
-    }
-    diffTime = node.bpm.timing[node.index] - time;
-    diffDist = diffTime * node.speed[node.index];
-    node.y = node.dstY[node.index] - diffDist;
-    if (node.y > node.dstY[node.index]) {
-      this._sys.removeChild(this._sys.getCurrentScene(), node);
-      return this._notifier.trigger('remove', time);
-    }
-  };
-
-  return MeasureNodes;
-
-})(FallObj);
-
-module.exports = MeasureNodes;
-
-
-
-},{"./eventObserver":4,"./fallObj":5}],12:[function(require,module,exports){
-var EventObserver, FallObj, Judge, KeydownEffect, Notes,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  hasProp = {}.hasOwnProperty;
-
-EventObserver = require('./eventObserver');
-
-FallObj = require('./fallObj');
-
-KeydownEffect = require('./keydownEffect');
-
-Judge = require('./judge');
-
-Notes = (function(superClass) {
-  extend(Notes, superClass);
-
-  function Notes(_sys, _res, _timer, _config) {
-    this._sys = _sys;
-    this._res = _res;
-    this._timer = _timer;
-    this._config = _config;
-    this._add = bind(this._add, this);
-    this._notifier = new EventObserver();
-    this._keyDownEffect = new KeydownEffect(this._sys);
-    this._judge = new Judge(this._config.judge);
-    this._notes = [];
-    this._genTime = [];
-  }
-
-  Notes.prototype.init = function(bms, genTime) {
-    var i, k, len, measure, ref, time, xArr;
-    this._genTime = genTime;
-    this._index = 0;
-    this._notes.length = 0;
-    this._group = this._sys.createGroup();
-    this._sys.addChild(this._sys.getCurrentScene(), this._group, this._res.fallObj.zIndex);
-    ref = this._genTime;
-    for (measure = k = 0, len = ref.length; k < len; measure = ++k) {
-      time = ref[measure];
-      this._generate(bms, measure, time);
-    }
-    xArr = (function() {
-      var l, ref1, results;
-      results = [];
-      for (i = l = 0, ref1 = this._res.fallObj.keyNum; 0 <= ref1 ? l < ref1 : l > ref1; i = 0 <= ref1 ? ++l : --l) {
-        results.push(this._calcNoteXCoordinate(i));
-      }
-      return results;
-    }).call(this);
-    this._keyDownEffect.init(this._res.effect, xArr);
-  };
-
-  Notes.prototype._generate = function(bms, measure, time) {
-    var base, black, bpms, fallDist, i, j, k, key, l, len, len1, note, notes, ref, ref1, timing, turntable, white;
-    turntable = this._res.fallObj.noteTurntableImage;
-    white = this._res.fallObj.noteWhiteImage;
-    black = this._res.fallObj.noteBlackImage;
-    fallDist = this._res.fallObj.fallDist;
-    bpms = bms.bpms;
-    notes = bms.notes;
-    if ((base = this._notes)[measure] == null) {
-      base[measure] = [];
-    }
-    if (notes[measure] == null) {
-      return;
-    }
-    ref = notes[measure].key;
-    for (i = k = 0, len = ref.length; k < len; i = ++k) {
-      key = ref[i];
-      ref1 = key.timing;
-      for (j = l = 0, len1 = ref1.length; l < len1; j = ++l) {
-        timing = ref1[j];
-        switch (i) {
-          case 0:
-          case 2:
-          case 4:
-          case 6:
-            note = this._sys.createSprite(white.width, white.height, white.src);
-            break;
-          case 1:
-          case 3:
-          case 5:
-            note = this._sys.createSprite(black.width, black.height, black.src);
-            break;
-          case 7:
-            note = this._sys.createSprite(turntable.width, turntable.height, turntable.src);
-            break;
-          default:
-            throw new Error("error unlnown note");
-        }
-        note.x = this._calcNoteXCoordinate(i);
-        note.y = -note.height;
-        note.timing = timing;
-        note.wav = key.id[j];
-        note.key = i;
-        note.clear = false;
-        note.hasJudged = false;
-        this._appendFallParams(note, bpms, time, fallDist);
-        this._notes[measure].push(note);
-      }
-    }
-  };
-
-  Notes.prototype._calcNoteXCoordinate = function(id) {
-    var black, margin, offset, turntable, white;
-    turntable = this._res.fallObj.noteTurntableImage;
-    white = this._res.fallObj.noteWhiteImage;
-    black = this._res.fallObj.noteBlackImage;
-    offset = this._res.fallObj.offset;
-    margin = (id + 1) * this._res.fallObj.margin;
-    switch (id) {
-      case 0:
-      case 2:
-      case 4:
-      case 6:
-        return ~~(id / 2) * (black.width + white.width) + turntable.width + offset + margin;
-      case 1:
-      case 3:
-      case 5:
-        return ~~(id / 2) * (black.width + white.width) + turntable.width + offset + margin + white.width;
-      case 7:
-        return offset;
-      default:
-        throw new Error("error unlnown note");
-    }
-  };
-
-  Notes.prototype.start = function(autoplay) {
-    if (autoplay == null) {
-      autoplay = false;
-    }
-    this._schedulerId = this._sys.setScheduler(this._add);
-    return this._isAuto = autoplay;
-  };
-
-  Notes.prototype.stop = function() {
-    return this._sys.clearScheduler(this._schedulerId);
-  };
-
-  Notes.prototype.addListener = function(name, listner) {
-    return this._notifier.on(name, listner);
-  };
-
-  Notes.prototype.remove = function() {
-    this.stop();
-    this._keyDownEffect.remove();
-    return this._sys.removeChild(this._sys.getCurrentScene(), this._group);
-  };
-
-  Notes.prototype._add = function() {
-    var k, len, note, ref;
-    if (this._genTime[this._index] == null) {
-      return;
-    }
-    if (!(this._genTime[this._index] <= this._timer.get())) {
-      return;
-    }
-    ref = this._notes[this._index];
-    for (k = 0, len = ref.length; k < len; k++) {
-      note = ref[k];
-      this._sys.addChild(this._group, note);
-      this._sys.setScheduler(this._update.bind(this, note), note);
-    }
-    return this._index++;
-  };
-
-  Notes.prototype._update = function(note) {
-    var diffDist, diffTime, judgement, time;
-    time = this._timer.get();
-    while (time > note.bpm.timing[note.index]) {
-      if (note.index < note.bpm.timing.length - 1) {
-        note.index++;
-      } else {
-        break;
-      }
-    }
-    diffTime = note.bpm.timing[note.index] - time;
-    diffDist = diffTime * note.speed[note.index];
-    note.y = note.dstY[note.index] - diffDist - note.height;
-    if (note.y > note.dstY[note.index] - note.height) {
-      note.y = note.dstY[note.index] - note.height;
-    }
-    if (note.clear && !note.hasJudged) {
-      note.hasJudged = true;
-      judgement = this._judge.exec(note.diffTime);
-      this._notifier.trigger(judgement);
-      return;
-    }
-    if (time > note.timing + this._config.removeTime) {
-      this._sys.removeChild(this._group, note);
-      if (!note.clear) {
-        this._notifier.trigger('poor');
-      }
-      return;
-    }
-    if (this._isAuto) {
-      if (time >= note.timing && !note.clear) {
-        this._keyDownEffect.show(note.key);
-        note.clear = true;
-        note.hasJudged = true;
-        this._notifier.trigger('pgreat');
-        return this._notifier.trigger('hit', note.wav);
-      }
-    }
-  };
-
-  Notes.prototype.onKeydown = function(name, time, id) {
-    var diffTime, k, len, note, ref;
-    this._keyDownEffect.show(id);
-    ref = this._group.childNodes;
-    for (k = 0, len = ref.length; k < len; k++) {
-      note = ref[k];
-      if (!(note.key === id)) {
-        continue;
-      }
-      diffTime = note.timing - time;
-      if (!note.clear) {
-        if ((-this._config.reaction < diffTime && diffTime < this._config.reaction)) {
-          note.clear = true;
-          note.diffTime = diffTime;
-          this._notifier.trigger('hit', note.wav);
-          return;
-        } else {
-          this._notifier.trigger('epoor');
-          return;
-        }
-      }
-    }
-  };
-
-  return Notes;
-
-})(FallObj);
-
-module.exports = Notes;
-
-
-
-},{"./eventObserver":4,"./fallObj":5,"./judge":8,"./keydownEffect":10}],13:[function(require,module,exports){
-var Res;
-
-Res = (function() {
-  var $;
-
-  function Res() {}
-
-  $ = require('jquery');
-
-  Res.prototype.load = function(uri) {
-    var d;
+  Loader.prototype.load = function(url, _srcs) {
+    var d, m;
+    this._srcs = _srcs;
     d = new $.Deferred;
-    $.getJSON(uri, (function(_this) {
-      return function(json) {
-        var k1, k2, ref, v1, v2;
-        _this._objs = json;
-        _this._srcs = [];
-        ref = _this._objs;
-        for (k1 in ref) {
-          v1 = ref[k1];
-          for (k2 in v1) {
-            v2 = v1[k2];
-            if (v2.src != null) {
-              _this._srcs.push(v2.src);
+    m = /^.+\//.exec(url);
+    if (m) {
+      this._prefix = m[0];
+    }
+    console.log(this._prefix);
+    $.ajax({
+      url: url,
+      success: (function(_this) {
+        return function(bms) {
+          var k, parser, ref, ref1, v;
+          parser = new Parser();
+          _this._bms = parser.parse(bms);
+          if (_this.srcs != null) {
+            _this._sys.preload(_this._srcs);
+          }
+          ref = _this._bms.wav;
+          for (k in ref) {
+            v = ref[k];
+            if (v != null) {
+              _this._sys.preload(_this._prefix + v);
             }
           }
-        }
-        return d.resolve();
-      };
-    })(this));
+          ref1 = _this._bms.bmp;
+          for (k in ref1) {
+            v = ref1[k];
+            if (v != null) {
+              _this._sys.preload(_this._prefix + v);
+            }
+          }
+          return _this._sys.start().then(function() {
+            return d.resolve(_this._bms);
+          });
+        };
+      })(this)
+    });
     return d.promise();
   };
 
-  Res.prototype.get = function() {
-    return {
-      srcs: this._srcs,
-      objs: this._objs
-    };
-  };
-
-  return Res;
+  return Loader;
 
 })();
 
-module.exports = Res;
+module.exports = Loader;
 
 
 
-},{"jquery":16}],14:[function(require,module,exports){
-var Stats;
-
-Stats = (function() {
-  function Stats(_sys) {
-    this._sys = _sys;
-  }
-
-  Stats.prototype.init = function(res, noteNum, maxScore) {
-    this._score = 0;
-    this._dispScore = 0;
-    this._maxCombo = 0;
-    this._combo = 0;
-    this._pgreatNum = 0;
-    this._greatNum = 0;
-    this._goodNum = 0;
-    this._badNum = 0;
-    this._poorNum = 0;
-    this._maxScore = maxScore;
-    this._pgreatIncVal = maxScore / noteNum;
-    this._greatIncVal = maxScore / noteNum * 0.7;
-    this._goodIncVal = maxScore / noteNum * 0.5;
-    this._scoreLabel = this._sys.createLabel(res.scoreLabel.font, res.scoreLabel.color, res.scoreLabel.align);
-    this._scoreLabel.x = res.scoreLabel.x;
-    this._scoreLabel.y = res.scoreLabel.y;
-    this._sys.setText(this._scoreLabel, 0);
-    return this._sys.addChild(this._sys.getCurrentScene(), this._scoreLabel, res.scoreLabel.z);
-  };
-
-  Stats.prototype.remove = function() {
-    return this._sys.removeChild(this._sys.getCurrentScene(), this._scoreLabel);
-  };
-
-  Stats.prototype.get = function() {
-    return {
-      score: this._dispScore,
-      combo: this._maxCombo,
-      pgreat: this._pgreatNum,
-      great: this._greatNum,
-      good: this._goodNum,
-      bad: this._badNum,
-      poor: this._poorNum
-    };
-  };
-
-  Stats.prototype.clear = function() {
-    this._score = 0;
-    this._dispScore = 0;
-    this._combo = 0;
-    this._maxCombo = 0;
-    this._pgreatNum = 0;
-    this._greatNum = 0;
-    this._goodNum = 0;
-    this._badNum = 0;
-    this._poorNum = 0;
-    return this._sys.setText(this._scoreLabel, 0);
-  };
-
-  Stats.prototype.update = function(judge) {
-    switch (judge) {
-      case "pgreat":
-        this._score += this._pgreatIncVal;
-        this._combo++;
-        this._pgreatNum++;
-        if (this._combo > this._maxCombo) {
-          this._maxCombo = this._combo;
-        }
-        break;
-      case "great":
-        this._score += this._greatIncVal;
-        this._combo++;
-        this._greatNum++;
-        if (this._combo > this._maxCombo) {
-          this._maxCombo = this._combo;
-        }
-        break;
-      case "good":
-        this._score += this._goodIncVal;
-        this._combo++;
-        this._goodNum++;
-        if (this._combo > this._maxCombo) {
-          this._maxCombo = this._combo;
-        }
-        break;
-      case "bad":
-        this._combo = 0;
-        this._badNum++;
-        break;
-      default:
-        this._combo = 0;
-        this._poorNum++;
-    }
-    this._dispScore = ~~(this._score.toFixed());
-    return this._sys.setText(this._scoreLabel, this._dispScore);
-  };
-
-  return Stats;
-
-})();
-
-module.exports = Stats;
-
-
-
-},{}],15:[function(require,module,exports){
-var Timer;
-
-Timer = (function() {
-  function Timer() {
-    this._startTime = 0;
-  }
-
-  Timer.prototype.start = function() {
-    return this._startTime = new Date();
-  };
-
-  Timer.prototype.get = function() {
-    var currentTime;
-    if (this._startTime === 0) {
-      return 0;
-    }
-    currentTime = new Date();
-    return currentTime - this._startTime;
-  };
-
-  Timer.prototype.clear = function() {
-    return this._startTime = 0;
-  };
-
-  return Timer;
-
-})();
-
-module.exports = Timer;
-
-
-
-},{}],16:[function(require,module,exports){
+},{"./bmsParser":2,"jquery":6}],6:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.3
  * http://jquery.com/
@@ -17506,1439 +17008,28 @@ return jQuery;
 
 }));
 
-},{}],17:[function(require,module,exports){
-var BpmViewer, Sys, Timer, expect, utils;
+},{}],7:[function(require,module,exports){
+var Loader, Sys, expect, utils;
 
 expect = chai.expect;
 
-Sys = require('../../app/gamesys');
-
-Timer = require('../../app/timer');
-
-BpmViewer = require('../../app/bpmIndicator');
-
-utils = require('./utils');
-
-describe('BpmIndicator class test', function() {
-  var bpmViewer, bpms, capNum, res, sys, timer;
-  capNum = 0;
-  sys = new Sys(640, 480);
-  timer = new Timer;
-  res = {
-    bpmLabel: {
-      type: "label",
-      align: "left",
-      font: "12px Arial",
-      color: "rgba(0, 0, 0, 0.8)",
-      x: 0,
-      y: 100,
-      z: 1
-    }
-  };
-  bpms = [
-    {
-      val: 100,
-      timing: 0
-    }, {
-      val: 200,
-      timing: 500
-    }, {
-      val: 300,
-      timing: 1000
-    }
-  ];
-  bpmViewer = new BpmViewer(sys, timer, bpms);
-  it('should bpmlabel updated', function(done) {
-    timer.start();
-    setTimeout(function() {
-      return utils.capture("capture/bpmViewer/bpmViewer" + capNum++);
-    }, 50);
-    setTimeout(function() {
-      return utils.capture("capture/bpmViewer/bpmViewer" + capNum++);
-    }, 600);
-    return setTimeout(function() {
-      utils.capture("capture/bpmViewer/bpmViewer" + capNum++);
-      return done();
-    }, 1100);
-  });
-  before(function(done) {
-    bpmViewer.init(res);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {
-    return bpmViewer.remove();
-  });
-  beforeEach(function() {
-    return timer.clear();
-  });
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/bpmIndicator":2,"../../app/gamesys":6,"../../app/timer":15,"./utils":30}],18:[function(require,module,exports){
-var EventObserver, expect;
-
-expect = chai.expect;
-
-EventObserver = require('../../app/eventObserver');
-
-describe('EventObserver class test', function() {
-  var eventObserver;
-  eventObserver = null;
-  it('should corresponding listener will called', function(done) {
-    eventObserver.on('test1', function(name, param) {
-      expect(name).to.be.equal('test1');
-      return expect(param).to.be.equal(1);
-    });
-    eventObserver.on('test2', function(name, param) {
-      expect(name).to.be.equal('test2');
-      return expect(param).to.be.equal(2);
-    });
-    eventObserver.trigger('test1', 1);
-    eventObserver.trigger('test2', 2);
-    return done();
-  });
-  before(function() {
-    return eventObserver = new EventObserver();
-  });
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/eventObserver":4}],19:[function(require,module,exports){
-var FallObj, expect;
-
-expect = chai.expect;
-
-FallObj = require('../../app/fallObj');
-
-describe('FallObj class test', function() {
-  it('should correct params appended when start time is 0', function() {
-    var bpmTiming, bpmVal, bpms, dstY, fallDistance, fallObj, i, j, node, speed, v;
-    fallObj = new FallObj();
-    bpms = [
-      {
-        timing: 800,
-        val: 140
-      }, {
-        timing: 1200,
-        val: 160
-      }, {
-        timing: 1600,
-        val: 180
-      }, {
-        timing: 2000,
-        val: 200
-      }, {
-        timing: 2400,
-        val: 220
-      }, {
-        timing: 2800,
-        val: 240
-      }
-    ];
-    node = {
-      timing: 2400,
-      bpm: {
-        timing: [],
-        val: []
-      },
-      dstY: [],
-      speed: []
-    };
-    fallDistance = 400;
-    fallObj._appendFallParams(node, bpms, 0, fallDistance);
-    speed = [fallDistance / (240000 / 140), fallDistance / (240000 / 140), fallDistance / (240000 / 160), fallDistance / (240000 / 180), fallDistance / (240000 / 200)];
-    bpmVal = [140, 140, 160, 180, 200];
-    bpmTiming = [800, 1200, 1600, 2000, 2400];
-    dstY = [];
-    expect(node.speed.toString()).to.be.equal(speed.toString());
-    expect(node.bpm.timing.toString()).to.be.equal(bpmTiming.toString());
-    expect(node.bpm.val.toString()).to.be.equal(bpmVal.toString());
-    for (i = j = bpmTiming.length - 1; j >= 0; i = j += -1) {
-      v = bpmTiming[i];
-      if (i === node.dstY.length - 1) {
-        dstY[i] = fallDistance;
-      } else {
-        dstY[i] = dstY[i + 1] - (speed[i + 1] * (bpmTiming[i + 1] - bpmTiming[i]));
-      }
-    }
-    return expect(node.dstY.toString()).to.be.equal(dstY.toString());
-  });
-  it('should correct params appended when start time is 1000', function() {
-    var bpmTiming, bpmVal, bpms, dstY, fallDistance, fallObj, i, j, node, speed, v;
-    fallObj = new FallObj();
-    bpms = [
-      {
-        timing: 800,
-        val: 140
-      }, {
-        timing: 1200,
-        val: 160
-      }, {
-        timing: 1600,
-        val: 180
-      }, {
-        timing: 2000,
-        val: 200
-      }, {
-        timing: 2400,
-        val: 220
-      }, {
-        timing: 2800,
-        val: 240
-      }
-    ];
-    node = {
-      timing: 2600,
-      bpm: {
-        timing: [],
-        val: []
-      },
-      dstY: [],
-      speed: []
-    };
-    fallDistance = 400;
-    fallObj._appendFallParams(node, bpms, 1000, fallDistance);
-    speed = [fallDistance / (240000 / 140), fallDistance / (240000 / 160), fallDistance / (240000 / 180), fallDistance / (240000 / 200), fallDistance / (240000 / 220)];
-    bpmVal = [140, 160, 180, 200, 220];
-    bpmTiming = [1200, 1600, 2000, 2400, 2600];
-    dstY = [];
-    expect(node.speed.toString()).to.be.equal(speed.toString());
-    expect(node.bpm.timing.toString()).to.be.equal(bpmTiming.toString());
-    expect(node.bpm.val.toString()).to.be.equal(bpmVal.toString());
-    for (i = j = bpmTiming.length - 1; j >= 0; i = j += -1) {
-      v = bpmTiming[i];
-      if (i === node.dstY.length - 1) {
-        dstY[i] = fallDistance;
-      } else {
-        dstY[i] = dstY[i + 1] - (speed[i + 1] * (bpmTiming[i + 1] - bpmTiming[i]));
-      }
-    }
-    return expect(node.dstY.toString()).to.be.equal(dstY.toString());
-  });
-  before(function() {});
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/fallObj":5}],20:[function(require,module,exports){
-var Sys, expect, res, utils;
-
-expect = chai.expect;
+Loader = require('../../app/loader');
 
 Sys = require('../../app/gamesys');
 
 utils = require('./utils');
-
-res = {
-  test1: './img/test1.png',
-  test2: './img/test2.png',
-  test3: './img/test3.png'
-};
-
-describe('game system test', function(done) {
-  var capNum, label, sys, test1, test2, test3;
-  sys = null;
-  capNum = 0;
-  test1 = null;
-  test2 = null;
-  test3 = null;
-  label = null;
-  it('sprite add to rootsecne with zindex test', function(done) {
-    test1 = sys.createSprite(32, 32, res.test1);
-    test1.x = 0;
-    test1.y = 0;
-    sys.addChild(sys.getCurrentScene(), test1, 0);
-    test2 = sys.createSprite(32, 32, res.test2);
-    test2.x = 10;
-    test2.y = 10;
-    sys.addChild(sys.getCurrentScene(), test2, 2);
-    test3 = sys.createSprite(32, 32, res.test3);
-    test3.x = 20;
-    test3.y = 20;
-    sys.addChild(sys.getCurrentScene(), test3, 1);
-    expect(sys.getChildNum(sys.getCurrentScene())).to.be.equal(3);
-    return setTimeout(function() {
-      utils.capture("capture/sys/sys" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('sprite remove from rootsecne test', function(done) {
-    sys.removeChild(sys.getCurrentScene(), test1);
-    sys.removeChild(sys.getCurrentScene(), test2);
-    sys.removeChild(sys.getCurrentScene(), test3);
-    expect(sys.getChildNum(sys.getCurrentScene())).to.be.equal(0);
-    return setTimeout(function() {
-      utils.capture("capture/sys/sys" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('sprite add to rootsecne without zindex test', function(done) {
-    test1 = sys.createSprite(32, 32, res.test1);
-    test1.x = 0;
-    test1.y = 0;
-    sys.addChild(sys.getCurrentScene(), test1);
-    test2 = sys.createSprite(32, 32, res.test2);
-    test2.x = 10;
-    test2.y = 10;
-    sys.addChild(sys.getCurrentScene(), test2);
-    test3 = sys.createSprite(32, 32, res.test3);
-    test3.x = 20;
-    test3.y = 20;
-    sys.addChild(sys.getCurrentScene(), test3);
-    expect(sys.getChildNum(sys.getCurrentScene())).to.be.equal(3);
-    return setTimeout(function() {
-      utils.capture("capture/sys/sys" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('sprite update test', function(done) {
-    sys.setScheduler(function() {
-      this.x += 1;
-      if (this.x > 40) {
-        sys.removeChild(sys.getCurrentScene(), this);
-        return setTimeout(function() {
-          utils.capture("capture/sys/sys" + capNum++);
-          expect(sys.getChildNum(sys.getCurrentScene())).to.be.equal(0);
-          return done();
-        }, 10);
-      }
-    }, test1);
-    sys.setScheduler(function() {
-      this.x += 1;
-      if (this.x > 40) {
-        return sys.removeChild(sys.getCurrentScene(), this);
-      }
-    }, test2);
-    return sys.setScheduler(function() {
-      this.x += 1;
-      if (this.x > 40) {
-        return sys.removeChild(sys.getCurrentScene(), this);
-      }
-    }, test3);
-  });
-  it('label add to rootsecne with zindex test', function(done) {
-    label = sys.createLabel('Arial', 'rgba(0, 0, 0, 0.8)', 'left');
-    label.x = 0;
-    label.y = 0;
-    sys.setText(label, 'this is test message!!');
-    sys.addChild(sys.getCurrentScene(), label, 1);
-    expect(sys.getChildNum(sys.getCurrentScene())).to.be.equal(1);
-    return setTimeout(function() {
-      utils.capture("capture/sys/sys" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('label remove from rootsecne test', function(done) {
-    sys.removeChild(sys.getCurrentScene(), label);
-    expect(sys.getChildNum(sys.getCurrentScene())).to.be.equal(0);
-    return setTimeout(function() {
-      utils.capture("capture/sys/sys" + capNum++);
-      return done();
-    }, 50);
-  });
-  before(function(done) {
-    sys = new Sys(640, 480);
-    sys.preload([res.test1, res.test2, res.test3]);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/gamesys":6,"./utils":30}],21:[function(require,module,exports){
-var Gauge, INIT_RATE, Sys, TEST_NOTE_NUM, TEST_TOTAL, expect, utils;
-
-expect = chai.expect;
-
-Sys = require('../../app/gamesys');
-
-Gauge = require('../../app/gauge');
-
-utils = require('./utils');
-
-INIT_RATE = 20;
-
-TEST_TOTAL = 80;
-
-TEST_NOTE_NUM = 30;
-
-describe('gauge class test', function() {
-  var capNum, config, gauge, rate, res, sys;
-  capNum = 0;
-  rate = INIT_RATE;
-  sys = new Sys(640, 480);
-  gauge = new Gauge(sys);
-  res = {
-    gaugeImage: {
-      type: "image",
-      src: "../res/gauge.png",
-      width: 4,
-      height: 12,
-      x: 0,
-      y: 150,
-      z: 1
-    },
-    rateLabel: {
-      type: "label",
-      align: "left",
-      font: "12px Arial",
-      color: "rgba(0, 0, 0, 0.8)",
-      x: 0,
-      y: 100,
-      z: 1
-    }
-  };
-  config = {
-    initRate: INIT_RATE,
-    greatIncVal: TEST_TOTAL / TEST_NOTE_NUM,
-    goodIncVal: TEST_TOTAL / TEST_NOTE_NUM * 0.5,
-    badDecVal: 1.8,
-    poorDecVal: 4.6,
-    num: 50,
-    clearVal: 40
-  };
-  it('initialize gauge and capture gauge', function(done) {
-    gauge.init(res, config);
-    gauge.start(30);
-    expect(gauge.get()).to.be.equal(20);
-    return setTimeout(function() {
-      utils.capture("capture/gauge/gauge" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('should gauge is 100%(20%+80%) when all pgreat', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      gauge.update('pgreat');
-      expect(gauge.get()).to.be.equal(~~((config.initRate + config.greatIncVal * (i + 1)).toFixed()));
-    }
-    return setTimeout(function() {
-      utils.capture("capture/gauge/gauge" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('should gauge is 100%(20%+80%) when all great', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      gauge.update('pgreat');
-      expect(gauge.get()).to.be.equal(~~((config.initRate + config.greatIncVal * (i + 1)).toFixed()));
-    }
-    return setTimeout(function() {
-      utils.capture("capture/gauge/gauge" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('should gauge is 60%(20%+40%) when all good', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      gauge.update('good');
-      expect(gauge.get()).to.be.equal(~~((config.initRate + config.goodIncVal * (i + 1)).toFixed()));
-    }
-    return setTimeout(function() {
-      utils.capture("capture/gauge/gauge" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('should gauge is 2% when all bad', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      gauge.update('bad');
-      rate = ~~((config.initRate - config.badDecVal * (i + 1)).toFixed());
-      expect(gauge.get()).to.be.equal(rate < 2 ? 2 : rate);
-    }
-    return setTimeout(function() {
-      utils.capture("capture/gauge/gauge" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('should gauge is 2% when all poor', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      gauge.update('poor');
-      rate = ~~((config.initRate - config.poorDecVal * (i + 1)).toFixed());
-      expect(gauge.get()).to.be.equal(rate < 2 ? 2 : rate);
-    }
-    return setTimeout(function() {
-      utils.capture("capture/gauge/gauge" + capNum++);
-      return done();
-    }, 50);
-  });
-  before(function(done) {
-    sys.preload([res.gaugeImage.src]);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {
-    return gauge.remove();
-  });
-  beforeEach(function() {});
-  return afterEach(function() {
-    return gauge.clear();
-  });
-});
-
-
-
-},{"../../app/gamesys":6,"../../app/gauge":7,"./utils":30}],22:[function(require,module,exports){
-var Judge, expect;
-
-expect = chai.expect;
-
-Judge = require('../../app/judge');
-
-describe('Judge class test', function() {
-  var config, judge;
-  judge = null;
-  config = {
-    pgreat: 10,
-    great: 20,
-    good: 50,
-    bad: 100,
-    poor: 200
-  };
-  it('should return pgreat judgement', function() {
-    judge = new Judge(config);
-    expect(judge.exec(0)).to.be.equal('pgreat');
-    expect(judge.exec(-9)).to.be.equal('pgreat');
-    return expect(judge.exec(9)).to.be.equal('pgreat');
-  });
-  it('should return great judgement', function() {
-    judge = new Judge(config);
-    expect(judge.exec(-10)).to.be.equal('great');
-    expect(judge.exec(10)).to.be.equal('great');
-    expect(judge.exec(19)).to.be.equal('great');
-    return expect(judge.exec(-19)).to.be.equal('great');
-  });
-  it('should return good judgement', function() {
-    judge = new Judge(config);
-    expect(judge.exec(-20)).to.be.equal('good');
-    expect(judge.exec(20)).to.be.equal('good');
-    expect(judge.exec(49)).to.be.equal('good');
-    return expect(judge.exec(-49)).to.be.equal('good');
-  });
-  it('should return bad judgement', function() {
-    judge = new Judge(config);
-    expect(judge.exec(-50)).to.be.equal('bad');
-    expect(judge.exec(50)).to.be.equal('bad');
-    expect(judge.exec(99)).to.be.equal('bad');
-    return expect(judge.exec(-99)).to.be.equal('bad');
-  });
-  it('should return poor judgement', function() {
-    judge = new Judge(config);
-    expect(judge.exec(-100)).to.be.equal('poor');
-    expect(judge.exec(100)).to.be.equal('poor');
-    expect(judge.exec(200)).to.be.equal('poor');
-    return expect(judge.exec(201)).to.be.equal('poor');
-  });
-  before(function() {});
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/judge":8}],23:[function(require,module,exports){
-var $, KeyNotifier, Timer, expect, utils;
-
-expect = chai.expect;
-
-KeyNotifier = require('../../app/keyNotifier');
-
-Timer = require('../../app/timer');
-
-utils = require('./utils');
-
-$ = require('jquery');
-
-describe('keyNotifier class test', function() {
-  var eventId, key, keyConfig, testId, timer;
-  timer = new Timer();
-  key = new KeyNotifier(timer);
-  testId = 0;
-  eventId = 0;
-  keyConfig = ['Z', 'S', 'X', 'D', 'C', 'F', 'V', 16];
-  it('should call listener and passed keydown time when generate keydown by 100msec', function(done) {
-    var i, id, len, listener, timerId, v;
-    timerId = null;
-    listener = function(name, time, id) {
-      var expectTime;
-      console.log("press key = " + name + " id = " + id + " key down time = " + time);
-      expect(id).to.be.equal(testId);
-      expect(name).to.be.equal(keyConfig[testId]);
-      expectTime = (testId + 1) * 100;
-      expect(time).to.be.within(expectTime - 50, expectTime + 50);
-      testId++;
-      if (testId >= keyConfig.length) {
-        return done();
-      }
-    };
-    key.start();
-    for (id = i = 0, len = keyConfig.length; i < len; id = ++i) {
-      v = keyConfig[id];
-      key.addListener(v, listener, id);
-    }
-    timer.start();
-    return timerId = setInterval(function() {
-      utils.generateKeyDownEvent(keyConfig[eventId]);
-      eventId++;
-      if (eventId >= keyConfig.length) {
-        return clearInterval(timerId);
-      }
-    }, 100);
-  });
-  before(function() {});
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/keyNotifier":9,"../../app/timer":15,"./utils":30,"jquery":16}],24:[function(require,module,exports){
-var $, KeydownEffect, Sys, expect, utils;
-
-expect = chai.expect;
-
-KeydownEffect = require('../../app/keydownEffect');
-
-Sys = require('../../app/gamesys');
-
-utils = require('./utils');
-
-$ = require('jquery');
-
-describe('KeydownEffect class test', function() {
-  var capNum, effect, res, sys, x;
-  this.timeout(10000);
-  capNum = 0;
-  sys = new Sys(640, 480);
-  effect = new KeydownEffect(sys);
-  x = [41, 63, 80, 102, 119, 141, 158, 0];
-  res = {
-    y: 0,
-    z: 1,
-    turntableKeydownImage: {
-      type: "image",
-      src: "../res/turntable-keydown.png",
-      width: 41,
-      height: 316
-    },
-    whiteKeydownImage: {
-      type: "image",
-      src: "../res/white-keydown.png",
-      width: 22,
-      height: 316
-    },
-    blackKeydownImage: {
-      type: "image",
-      src: "../res/black-keydown.png",
-      width: 17,
-      height: 316
-    }
-  };
-  it('keydown effect show test, check runner.html or capture directory', function(done) {
-    var index, promise;
-    promise = null;
-    index = 0;
-    effect.init(res, x);
-    promise = (function() {
-      var d, id;
-      d = new $.Deferred;
-      id = setInterval(function() {
-        effect.show(index++);
-        utils.capture("capture/keydownEffect/keydownEffect" + capNum++);
-        if (x.length === index) {
-          clearInterval(id);
-          return d.resolve();
-        }
-      }, 20);
-      return d.promise();
-    })();
-    return promise.then(function() {
-      return done();
-    });
-  });
-  before(function(done) {
-    sys.preload([res.whiteKeydownImage.src, res.blackKeydownImage.src, res.turntableKeydownImage.src]);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/gamesys":6,"../../app/keydownEffect":10,"./utils":30,"jquery":16}],25:[function(require,module,exports){
-var Nodes, Sys, Timer, expect, utils;
-
-expect = chai.expect;
-
-Nodes = require('../../app/measureNodes');
-
-Sys = require('../../app/gamesys');
-
-Timer = require('../../app/timer');
-
-utils = require('./utils');
-
-describe('MeasureNodes class test', function() {
-  var bpms, capNum, correctGenerationtiming, fallDistance, node, nodes, removeNum, res, sys, timer;
-  this.timeout(10000);
-  capNum = 0;
-  removeNum = 0;
-  sys = new Sys(640, 480);
-  timer = new Timer();
-  nodes = new Nodes(sys, timer);
-  res = {
-    fallDist: 400,
-    nodeImage: {
-      type: "image",
-      src: "../res/node.png",
-      width: 194,
-      height: 1,
-      x: 0,
-      y: -10,
-      z: 1
-    }
-  };
-  node = [
-    {
-      timing: 2000
-    }, {
-      timing: 4000
-    }, {
-      timing: 6000
-    }
-  ];
-  bpms = [
-    {
-      timing: 800,
-      val: 140
-    }, {
-      timing: 1200,
-      val: 160
-    }, {
-      timing: 1600,
-      val: 180
-    }, {
-      timing: 2000,
-      val: 200
-    }, {
-      timing: 2400,
-      val: 220
-    }, {
-      timing: 2800,
-      val: 240
-    }
-  ];
-  correctGenerationtiming = [0, 457, 3000];
-  fallDistance = 400;
-  it('should return node generation timing list when nodes created', function() {
-    var generationTime;
-    generationTime = nodes.init(res, bpms, node);
-    return expect(generationTime.toString()).to.be.equal(correctGenerationtiming.toString());
-  });
-  it('should node fall and call remove listenr when over fallDistance', function(done) {
-    nodes.addListener('remove', function(name, param) {
-      console.log("node remove time = " + param);
-      removeNum++;
-      if (removeNum === node.length) {
-        nodes.stop();
-        return done();
-      }
-    });
-    nodes.start();
-    return timer.start();
-  });
-  before(function(done) {
-    sys.preload([res.nodeImage.src]);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/gamesys":6,"../../app/measureNodes":11,"../../app/timer":15,"./utils":30}],26:[function(require,module,exports){
-var $, Notes, Sys, Timer, expect, utils;
-
-expect = chai.expect;
-
-Notes = require('../../app/notes');
-
-Sys = require('../../app/gamesys');
-
-Timer = require('../../app/timer');
-
-utils = require('./utils');
-
-$ = require('jquery');
-
-describe('Notes class test', function() {
-  var bms, bpms, capNum, config, genTime, id, judgeNum, keydownArr, note, notes, res, sys, timer, wavNum;
-  this.timeout(10000);
-  capNum = 0;
-  id = 0;
-  sys = new Sys(640, 480);
-  timer = new Timer();
-  res = {
-    fallObj: {
-      fallDist: 400,
-      keyNum: 8,
-      offset: 35,
-      margin: 2,
-      zIndex: 4,
-      noteTurntableImage: {
-        type: "image",
-        src: "../res/note-turntable.png",
-        width: 41,
-        height: 6,
-        x: 0,
-        y: -10,
-        z: 1
-      },
-      noteWhiteImage: {
-        type: "image",
-        src: "../res/note-white.png",
-        width: 22,
-        height: 6,
-        x: 0,
-        y: -10,
-        z: 1
-      },
-      noteBlackImage: {
-        type: "image",
-        src: "../res/note-black.png",
-        width: 17,
-        height: 6,
-        x: 0,
-        y: -10,
-        z: 1
-      }
-    },
-    effect: {
-      y: 0,
-      z: 1,
-      turntableKeydownImage: {
-        type: "image",
-        src: "../res/turntable-keydown.png",
-        width: 41,
-        height: 316
-      },
-      whiteKeydownImage: {
-        type: "image",
-        src: "../res/white-keydown.png",
-        width: 22,
-        height: 316
-      },
-      blackKeydownImage: {
-        type: "image",
-        src: "../res/black-keydown.png",
-        width: 17,
-        height: 316
-      }
-    }
-  };
-  config = {
-    reaction: 200,
-    rmoveTime: 500,
-    judge: {
-      pgreat: 10,
-      great: 50,
-      good: 100,
-      bad: 150,
-      poor: 200
-    }
-  };
-  note = new Notes(sys, res, timer, config);
-  notes = [];
-  notes.push({
-    key: [
-      {
-        id: [0],
-        timing: [1000]
-      }, {
-        id: [1],
-        timing: [1100]
-      }, {
-        id: [2],
-        timing: [1200]
-      }, {
-        id: [3],
-        timing: [1300]
-      }, {
-        id: [4],
-        timing: [1400]
-      }, {
-        id: [5],
-        timing: [1500]
-      }, {
-        id: [6],
-        timing: [1600]
-      }, {
-        id: [7],
-        timing: [1700]
-      }
-    ]
-  });
-  notes.push({
-    key: [
-      {
-        id: [14],
-        timing: [2700]
-      }, {
-        id: [13],
-        timing: [2600]
-      }, {
-        id: [12],
-        timing: [2500]
-      }, {
-        id: [11],
-        timing: [2400]
-      }, {
-        id: [10],
-        timing: [2300]
-      }, {
-        id: [9],
-        timing: [2200]
-      }, {
-        id: [8],
-        timing: [2100]
-      }, {
-        id: [15],
-        timing: [2800]
-      }
-    ]
-  });
-  notes.push({
-    key: [
-      {
-        id: [22],
-        timing: [3700]
-      }, {
-        id: [21],
-        timing: [3600]
-      }, {
-        id: [20],
-        timing: [3500]
-      }, {
-        id: [19],
-        timing: [3400]
-      }, {
-        id: [18],
-        timing: [3300]
-      }, {
-        id: [17],
-        timing: [3200]
-      }, {
-        id: [16],
-        timing: [3100]
-      }, {
-        id: [23],
-        timing: [3800]
-      }
-    ]
-  });
-  bpms = [
-    {
-      timing: 800,
-      val: 140
-    }, {
-      timing: 1200,
-      val: 160
-    }, {
-      timing: 1600,
-      val: 180
-    }, {
-      timing: 2000,
-      val: 400
-    }, {
-      timing: 2400,
-      val: 50
-    }, {
-      timing: 2800,
-      val: 240
-    }
-  ];
-  bms = {
-    bpms: bpms,
-    notes: notes
-  };
-  genTime = [0, 1000, 2000, 3000];
-  judgeNum = {
-    pgreat: 0,
-    great: 0,
-    good: 0,
-    bad: 0,
-    poor: 0,
-    epoor: 0
-  };
-  wavNum = 0;
-  keydownArr = [
-    {
-      key: 0,
-      timing: 1000
-    }, {
-      key: 1,
-      timing: 1100
-    }, {
-      key: 2,
-      timing: 1200
-    }, {
-      key: 3,
-      timing: 1300
-    }, {
-      key: 4,
-      timing: 1400
-    }, {
-      key: 5,
-      timing: 1500
-    }, {
-      key: 6,
-      timing: 1600
-    }, {
-      key: 7,
-      timing: 1700
-    }, {
-      key: 6,
-      timing: 2100
-    }, {
-      key: 5,
-      timing: 2200
-    }, {
-      key: 4,
-      timing: 2300
-    }, {
-      key: 3,
-      timing: 2400
-    }, {
-      key: 2,
-      timing: 2500
-    }, {
-      key: 1,
-      timing: 2600
-    }, {
-      key: 0,
-      timing: 2700
-    }, {
-      key: 7,
-      timing: 2800
-    }, {
-      key: 6,
-      timing: 3100
-    }, {
-      key: 5,
-      timing: 3200
-    }, {
-      key: 4,
-      timing: 3300
-    }, {
-      key: 3,
-      timing: 3400
-    }, {
-      key: 2,
-      timing: 3500
-    }, {
-      key: 1,
-      timing: 3600
-    }, {
-      key: 0,
-      timing: 3700
-    }, {
-      key: 7,
-      timing: 3800
-    }
-  ];
-  note.addListener('pgreat', function(name) {
-    console.log(name);
-    return judgeNum.pgreat++;
-  });
-  note.addListener('great', function(name) {
-    console.log(name);
-    return judgeNum.great++;
-  });
-  note.addListener('good', function(name) {
-    console.log(name);
-    return judgeNum.good++;
-  });
-  note.addListener('bad', function(name) {
-    console.log(name);
-    return judgeNum.bad++;
-  });
-  note.addListener('poor', function(name) {
-    console.log(name);
-    return judgeNum.poor++;
-  });
-  note.addListener('epoor', function(name) {
-    console.log(name);
-    return judgeNum.epoor++;
-  });
-  note.addListener('hit', function(name, wav) {
-    console.log("hit wav id = " + wav);
-    return wavNum++;
-  });
-  it('note create and update test with auto mode', function(done) {
-    var i, j, k, key, len, len1, len2, n, promises, ref, ref1, time;
-    note.init(bms, genTime);
-    note.start(true);
-    timer.start();
-    promises = [];
-    for (i = 0, len = notes.length; i < len; i++) {
-      n = notes[i];
-      ref = n.key;
-      for (j = 0, len1 = ref.length; j < len1; j++) {
-        key = ref[j];
-        ref1 = key.timing;
-        for (k = 0, len2 = ref1.length; k < len2; k++) {
-          time = ref1[k];
-          promises.push((function() {
-            var d;
-            d = new $.Deferred;
-            setTimeout(function() {
-              utils.capture("capture/notes/notes" + capNum++);
-              return d.resolve();
-            }, time);
-            return d.promise();
-          })());
-        }
-      }
-    }
-    return $.when.apply($, promises).then(function() {
-      return setTimeout(function() {
-        expect(judgeNum.pgreat).to.be.equal(24);
-        expect(judgeNum.great).to.be.equal(0);
-        expect(judgeNum.good).to.be.equal(0);
-        expect(judgeNum.bad).to.be.equal(0);
-        expect(judgeNum.poor).to.be.equal(0);
-        expect(judgeNum.epoor).to.be.equal(0);
-        expect(wavNum).to.be.equal(24);
-        return done();
-      }, 1000);
-    });
-  });
-  it('note create and update test without auto mode', function(done) {
-    var i, index, j, k, key, len, len1, len2, n, promises, ref, ref1, time;
-    note.init(bms, genTime);
-    note.start(false);
-    timer.start();
-    promises = [];
-    index = 0;
-    id = null;
-    for (i = 0, len = notes.length; i < len; i++) {
-      n = notes[i];
-      ref = n.key;
-      for (j = 0, len1 = ref.length; j < len1; j++) {
-        key = ref[j];
-        ref1 = key.timing;
-        for (k = 0, len2 = ref1.length; k < len2; k++) {
-          time = ref1[k];
-          promises.push((function() {
-            var d;
-            d = new $.Deferred;
-            setTimeout(function() {
-              utils.capture("capture/notes/notes" + capNum++);
-              return d.resolve();
-            }, time);
-            return d.promise();
-          })());
-        }
-      }
-    }
-    id = setInterval(function() {
-      if (timer.get() >= keydownArr[index].timing) {
-        note.onKeydown("keydown", keydownArr[index].timing - ((index % 5) * 50) + 5, keydownArr[index].key);
-        index++;
-        if (index >= keydownArr.length) {
-          return clearInterval(id);
-        }
-      }
-    }, 50);
-    return $.when.apply($, promises).then(function() {
-      return setTimeout(function() {
-        expect(judgeNum.pgreat).to.be.equal(5);
-        expect(judgeNum.great).to.be.equal(5);
-        expect(judgeNum.good).to.be.equal(5);
-        expect(judgeNum.bad).to.be.equal(5);
-        expect(judgeNum.poor).to.be.equal(4);
-        expect(judgeNum.epoor).to.be.equal(0);
-        expect(wavNum).to.be.equal(24);
-        return done();
-      }, 1000);
-    });
-  });
-  before(function(done) {
-    sys.preload([res.fallObj.noteTurntableImage.src, res.fallObj.noteWhiteImage.src, res.fallObj.noteBlackImage.src, res.effect.turntableKeydownImage.src, res.effect.blackKeydownImage.src, res.effect.whiteKeydownImage.src]);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {});
-  beforeEach(function() {
-    judgeNum = {
-      pgreat: 0,
-      great: 0,
-      good: 0,
-      bad: 0,
-      poor: 0,
-      epoor: 0
-    };
-    return wavNum = 0;
-  });
-  return afterEach(function() {
-    timer.clear();
-    return note.remove();
-  });
-});
-
-
-
-},{"../../app/gamesys":6,"../../app/notes":12,"../../app/timer":15,"./utils":30,"jquery":16}],27:[function(require,module,exports){
-var Res, expect;
-
-expect = chai.expect;
-
-Res = require('../../app/resource');
-
-describe('resource class test', function() {
-  var URI, res, srcs;
-  URI = './js/resource_test.json';
-  srcs = ["./res/test2.png", "./res/test.png", "./res/gauge.png"];
-  res = new Res();
-  it('should loaded result match srcs', function(done) {
-    return res.load(URI).then(function() {
-      expect(res.get().srcs.toString()).to.be.equal(srcs.toString());
-      return done();
-    });
-  });
-  before(function() {});
-  after(function() {});
-  beforeEach(function() {});
-  return afterEach(function() {});
-});
-
-
-
-},{"../../app/resource":13}],28:[function(require,module,exports){
-var MAX_SCORE, Stats, Sys, TEST_NOTE_NUM, expect, utils;
-
-expect = chai.expect;
-
-Sys = require('../../app/gamesys');
-
-Stats = require('../../app/stats');
-
-utils = require('./utils');
-
-MAX_SCORE = 200000;
-
-TEST_NOTE_NUM = 30;
-
-describe('stats class test', function() {
-  var capNum, res, stats, sys;
-  capNum = 0;
-  sys = new Sys(640, 480);
-  stats = new Stats(sys);
-  res = {
-    scoreLabel: {
-      type: "label",
-      align: "left",
-      font: "12px Arial",
-      color: "rgba(0, 0, 0, 0.8)",
-      x: 0,
-      y: 100,
-      z: 1
-    }
-  };
-  it('initialize stats and capture stats', function(done) {
-    utils.capture("capture/stats/stats" + capNum++);
-    expect(stats.get().score).to.be.equal(0);
-    expect(stats.get().combo).to.be.equal(0);
-    expect(stats.get().pgreat).to.be.equal(0);
-    expect(stats.get().great).to.be.equal(0);
-    expect(stats.get().good).to.be.equal(0);
-    expect(stats.get().bad).to.be.equal(0);
-    expect(stats.get().poor).to.be.equal(0);
-    return done();
-  });
-  it('score is MAX_SCORE when all pgreat', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      stats.update('pgreat');
-    }
-    expect(stats.get().score).to.be.equal(MAX_SCORE);
-    expect(stats.get().combo).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().pgreat).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().great).to.be.equal(0);
-    expect(stats.get().good).to.be.equal(0);
-    expect(stats.get().bad).to.be.equal(0);
-    expect(stats.get().poor).to.be.equal(0);
-    return setTimeout(function() {
-      utils.capture("capture/stats/stats" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('score is MAX_SCORE * 0.7 when all great', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      stats.update('great');
-    }
-    expect(stats.get().score).to.be.equal(MAX_SCORE * 0.7);
-    expect(stats.get().combo).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().pgreat).to.be.equal(0);
-    expect(stats.get().great).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().good).to.be.equal(0);
-    expect(stats.get().bad).to.be.equal(0);
-    expect(stats.get().poor).to.be.equal(0);
-    return setTimeout(function() {
-      utils.capture("capture/stats/stats" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('score is MAX_SCORE * 0.5 when all good', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      stats.update('good');
-    }
-    expect(stats.get().score).to.be.equal(MAX_SCORE * 0.5);
-    expect(stats.get().combo).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().pgreat).to.be.equal(0);
-    expect(stats.get().great).to.be.equal(0);
-    expect(stats.get().good).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().bad).to.be.equal(0);
-    expect(stats.get().poor).to.be.equal(0);
-    return setTimeout(function() {
-      utils.capture("capture/stats/stats" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('score is 0 when all bad', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      stats.update('bad');
-    }
-    expect(stats.get().score).to.be.equal(0);
-    expect(stats.get().combo).to.be.equal(0);
-    expect(stats.get().pgreat).to.be.equal(0);
-    expect(stats.get().great).to.be.equal(0);
-    expect(stats.get().good).to.be.equal(0);
-    expect(stats.get().bad).to.be.equal(TEST_NOTE_NUM);
-    expect(stats.get().poor).to.be.equal(0);
-    return setTimeout(function() {
-      utils.capture("capture/stats/stats" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('score is 0 when all poor', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      stats.update('poor');
-    }
-    expect(stats.get().score).to.be.equal(0);
-    expect(stats.get().combo).to.be.equal(0);
-    expect(stats.get().pgreat).to.be.equal(0);
-    expect(stats.get().great).to.be.equal(0);
-    expect(stats.get().good).to.be.equal(0);
-    expect(stats.get().bad).to.be.equal(0);
-    expect(stats.get().poor).to.be.equal(TEST_NOTE_NUM);
-    return setTimeout(function() {
-      utils.capture("capture/stats/stats" + capNum++);
-      return done();
-    }, 50);
-  });
-  it('all judge num is 6', function(done) {
-    var i, j, ref;
-    for (i = j = 0, ref = TEST_NOTE_NUM / 5; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-      stats.update('pgreat');
-      stats.update('great');
-      stats.update('good');
-      stats.update('bad');
-      stats.update('poor');
-    }
-    expect(stats.get().score).to.be.equal(~~((MAX_SCORE / TEST_NOTE_NUM * 13.2).toFixed()));
-    expect(stats.get().combo).to.be.equal(3);
-    expect(stats.get().pgreat).to.be.equal(6);
-    expect(stats.get().great).to.be.equal(6);
-    expect(stats.get().good).to.be.equal(6);
-    expect(stats.get().bad).to.be.equal(6);
-    expect(stats.get().poor).to.be.equal(6);
-    return setTimeout(function() {
-      utils.capture("capture/stats/stats" + capNum++);
-      return done();
-    }, 50);
-  });
-  before(function(done) {
-    stats.init(res, TEST_NOTE_NUM, MAX_SCORE);
-    return sys.start().then(function() {
-      return done();
-    });
-  });
-  after(function() {
-    return stats.remove();
-  });
-  beforeEach(function() {});
-  return afterEach(function() {
-    return stats.clear();
-  });
-});
-
-
-
-},{"../../app/gamesys":6,"../../app/stats":14,"./utils":30}],29:[function(require,module,exports){
-var Timer, expect;
-
-expect = chai.expect;
-
-Timer = require('../../app/timer');
 
 describe('timer class test', function() {
-  var timer;
-  timer = null;
-  it('should timer.get() return 0 before start', function() {
-    var time;
-    time = timer.get();
-    return expect(time).to.be.equal(0);
+  var loader, sys;
+  this.timeout(30000);
+  sys = new Sys(640, 480);
+  loader = new Loader(sys);
+  it('should return pgreat judgement', function() {
+    return loader.load('http://localhost:8080/bms/normal.bms').then(function(bms) {
+      return console.dir(bms);
+    });
   });
-  it('set timer 1000msec, should get() return about 1000msec', function(done) {
-    timer.start();
-    return setTimeout(function() {
-      var time;
-      time = timer.get();
-      expect(time).to.be.within(950, 1050);
-      return done();
-    }, 1000);
-  });
-  it('should clear timer', function() {
-    timer.clear();
-    return expect(timer.get()).to.be.equal(0);
-  });
-  before(function() {
-    return timer = new Timer();
-  });
+  before(function() {});
   after(function() {});
   beforeEach(function() {});
   return afterEach(function() {});
@@ -18946,7 +17037,7 @@ describe('timer class test', function() {
 
 
 
-},{"../../app/timer":15}],30:[function(require,module,exports){
+},{"../../app/gamesys":4,"../../app/loader":5,"./utils":8}],8:[function(require,module,exports){
 var capture, generateKeyDownEvent;
 
 capture = function(name) {
