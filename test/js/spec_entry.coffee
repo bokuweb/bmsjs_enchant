@@ -1,4 +1,3 @@
-###
 require './spec_gamesys'
 require './spec_timer'
 require './spec_stats'
@@ -12,5 +11,4 @@ require './spec_bpmIndicator'
 require './spec_keydownEffect'
 require './spec_judge'
 require './spec_notes'
-###
-require './spec_loader'
+#require './spec_loader'

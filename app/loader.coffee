@@ -23,8 +23,7 @@ class Loader
         # preload *.bmp
         @_sys.preload @_prefix + v for k, v of @_bms.bmp when v?
         # loadend
-        @_sys.start().then =>
-          d.resolve @_bms
+        @_sys.start().then => d.resolve @_bms
     d.promise()
 
 module.exports = Loader

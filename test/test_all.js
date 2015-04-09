@@ -23,7 +23,7 @@ require('./spec_loader');
 var BmsParser;
 
 BmsParser = (function() {
-  var _bmpTiming, _calcTiming, _calcTotalNote, _createBar, _expand, _lcm, _merge, _modifyAfterParse, _noteTiming, _parse, _parseBMP, _parseChannelMsg, _parseProperty, _parseWAV, _storeBPM, _storeData, _storeWAV, _wavTiming;
+  var _bmpTiming, _calcTiming, _calcTotalNote, _createBar, _expand, _lcm, _merge, _modifyAfterParse, _noteTiming, _parse, _parseBMP, _parseChannelMsg, _parseProperty, _parseWAV, _serialize, _storeBPM, _storeData, _storeWAV, _wavTiming;
 
   function BmsParser() {
     this.bms = {
@@ -41,19 +41,29 @@ BmsParser = (function() {
       wav: {},
       bmp: {},
       data: [],
-      totalNote: 0
+      totalNote: 0,
+      bgms: [],
+      animation: [],
+      bpms: []
     };
     this.wavMessages = [];
   }
 
   BmsParser.prototype.parse = function(bms_text) {
-    var j, len, ref, row;
+    var len, m, ref, row;
     ref = bms_text.split('\n');
-    for (j = 0, len = ref.length; j < len; j++) {
-      row = ref[j];
+    for (m = 0, len = ref.length; m < len; m++) {
+      row = ref[m];
       _parse.call(this, row);
     }
     _modifyAfterParse.call(this);
+    this.bms.bpms[0] = {
+      timing: 0,
+      val: this.bms.bpm
+    };
+    _serialize(this.bms.bpms, "bpm", this.bms.data);
+    _serialize(this.bms.animation, "bmp", this.bms.data);
+    _serialize(this.bms.bgms, "wav", this.bms.data);
     this.bms.totalNote = _calcTotalNote.call(this);
     return this.bms;
   };
@@ -122,9 +132,9 @@ BmsParser = (function() {
       meter: 1.0,
       note: {
         key: (function() {
-          var j, results;
+          var m, results;
           results = [];
-          for (_ = j = 0; j <= 8; _ = ++j) {
+          for (_ = m = 0; m <= 8; _ = ++m) {
             results.push({
               message: [],
               timing: [],
@@ -181,9 +191,9 @@ BmsParser = (function() {
       this.wavMessages[measureNum] = [];
     }
     return this.wavMessages[measureNum].push((function() {
-      var j, ref, results;
+      var m, ref, results;
       results = [];
-      for (i = j = 0, ref = msg.length - 1; j <= ref; i = j += 2) {
+      for (i = m = 0, ref = msg.length - 1; m <= ref; i = m += 2) {
         results.push(parseInt(msg.slice(i, +(i + 1) + 1 || 9e9), 36));
       }
       return results;
@@ -193,9 +203,9 @@ BmsParser = (function() {
   _storeData = function(msg, array, measureNum) {
     var data, i;
     data = (function() {
-      var j, ref, results;
+      var m, ref, results;
       results = [];
-      for (i = j = 0, ref = msg.length - 1; j <= ref; i = j += 2) {
+      for (i = m = 0, ref = msg.length - 1; m <= ref; i = m += 2) {
         results.push(parseInt(msg.slice(i, +(i + 1) + 1 || 9e9), 36));
       }
       return results;
@@ -206,9 +216,9 @@ BmsParser = (function() {
   _storeBPM = function(msg, bpm, measureNum) {
     var i;
     return bpm.message = (function() {
-      var j, ref, results;
+      var m, ref, results;
       results = [];
-      for (i = j = 0, ref = msg.length - 1; j <= ref; i = j += 2) {
+      for (i = m = 0, ref = msg.length - 1; m <= ref; i = m += 2) {
         results.push(parseInt(msg.slice(i, +(i + 1) + 1 || 9e9), 16));
       }
       return results;
@@ -231,9 +241,9 @@ BmsParser = (function() {
     var _, i, interval;
     if (array.length === 0) {
       return (function() {
-        var j, ref, results;
+        var m, ref, results;
         results = [];
-        for (_ = j = 0, ref = length - 1; 0 <= ref ? j <= ref : j >= ref; _ = 0 <= ref ? ++j : --j) {
+        for (_ = m = 0, ref = length - 1; 0 <= ref ? m <= ref : m >= ref; _ = 0 <= ref ? ++m : --m) {
           results.push(0);
         }
         return results;
@@ -241,9 +251,9 @@ BmsParser = (function() {
     }
     interval = length / array.length;
     return (function() {
-      var j, ref, results;
+      var m, ref, results;
       results = [];
-      for (i = j = 0, ref = length - 1; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
+      for (i = m = 0, ref = length - 1; 0 <= ref ? m <= ref : m >= ref; i = 0 <= ref ? ++m : --m) {
         results.push(i % interval === 0 ? array[i / interval] : 0);
       }
       return results;
@@ -251,14 +261,14 @@ BmsParser = (function() {
   };
 
   _merge = function(ary1, ary2) {
-    var i, j, lcm, len, ref, ret, value;
+    var i, lcm, len, m, ref, ret, value;
     if (ary1.length === 0) {
       return ary2;
     }
     lcm = _lcm(ary1.length, ary2.length);
     ret = _expand(ary1, lcm);
     ref = _expand(ary2, lcm);
-    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+    for (i = m = 0, len = ref.length; m < len; i = ++m) {
       value = ref[i];
       if (value === 0) {
         continue;
@@ -269,12 +279,12 @@ BmsParser = (function() {
   };
 
   _modifyAfterParse = function() {
-    var _, bar, bpm, i, j, l, len, ref, results, time, val;
+    var _, bar, bpm, i, l, len, m, ref, results, time, val;
     bpm = this.bms.bpm;
     time = 0;
     ref = this.bms.data;
     results = [];
-    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+    for (i = m = 0, len = ref.length; m < len; i = ++m) {
       bar = ref[i];
       if (bar == null) {
         this.bms.data[i] = _createBar();
@@ -291,10 +301,10 @@ BmsParser = (function() {
       _wavTiming(time, bar, bpm, this.wavMessages[i]);
       l = bar.bpm.message.length;
       results.push((function() {
-        var len1, m, ref1, results1;
+        var len1, o, ref1, results1;
         ref1 = bar.bpm.message;
         results1 = [];
-        for (_ = m = 0, len1 = ref1.length; m < len1; _ = ++m) {
+        for (_ = o = 0, len1 = ref1.length; o < len1; _ = ++o) {
           val = ref1[_];
           if (val !== 0) {
             bar.bpm.val.push(val);
@@ -310,7 +320,7 @@ BmsParser = (function() {
   };
 
   _calcTiming = function(time, objects, bpmobj, bpm, meter) {
-    var b, bl, bpms, i, j, lcm, len, objs, ol, results, t, val;
+    var b, bl, bpms, i, lcm, len, m, objs, ol, results, t, val;
     bl = bpmobj.message.length;
     ol = objects.message.length;
     lcm = _lcm(bl, ol);
@@ -321,7 +331,7 @@ BmsParser = (function() {
     objects.timing = [];
     objects.id = [];
     results = [];
-    for (i = j = 0, len = bpms.length; j < len; i = ++j) {
+    for (i = m = 0, len = bpms.length; m < len; i = ++m) {
       val = bpms[i];
       if (objs[i] !== 0) {
         objects.timing.push(time + t);
@@ -336,12 +346,12 @@ BmsParser = (function() {
   };
 
   _noteTiming = function(time, bar, bpm) {
-    var j, l, len, n, ref, results;
+    var l, len, m, n, ref, results;
     l = bar.bpm.message.length;
     ref = bar.note.key;
     results = [];
-    for (j = 0, len = ref.length; j < len; j++) {
-      n = ref[j];
+    for (m = 0, len = ref.length; m < len; m++) {
+      n = ref[m];
       if (n.message.length !== 0) {
         results.push(_calcTiming(time, n, bar.bpm, bpm, bar.meter));
       }
@@ -354,22 +364,22 @@ BmsParser = (function() {
   };
 
   _wavTiming = function(time, bar, bpm, wavss) {
-    var b, bpms, i, j, l, lcm, len, len1, len2, m, o, ref, result, results, t, val, w, wavs, wl, ws;
+    var b, bpms, i, l, lcm, len, len1, len2, m, o, p, ref, result, results, t, val, w, wavs, wl, ws;
     if (wavss == null) {
       console.log('wavss is null');
       return;
     }
     l = bar.bpm.message.length;
     result = [];
-    for (j = 0, len = wavss.length; j < len; j++) {
-      ws = wavss[j];
+    for (m = 0, len = wavss.length; m < len; m++) {
+      ws = wavss[m];
       wl = ws.length;
       lcm = _lcm(l, wl);
       bpms = _expand(bar.bpm.message, lcm);
       wavs = _expand(ws, lcm);
       t = 0;
       b = bpm;
-      for (i = m = 0, len1 = bpms.length; m < len1; i = ++m) {
+      for (i = o = 0, len1 = bpms.length; o < len1; i = ++o) {
         val = bpms[i];
         if (wavs[i] !== 0) {
           result.push({
@@ -387,10 +397,43 @@ BmsParser = (function() {
       return a['timing'] - b['timing'];
     });
     results = [];
-    for (o = 0, len2 = ref.length; o < len2; o++) {
-      w = ref[o];
+    for (p = 0, len2 = ref.length; p < len2; p++) {
+      w = ref[p];
       bar.wav.timing.push(w.timing);
       results.push(bar.wav.id.push(w.id));
+    }
+    return results;
+  };
+
+  _serialize = function(arr, name, bms_data) {
+    var i, j, len, m, results, t, v;
+    results = [];
+    for (i = m = 0, len = bms_data.length; m < len; i = ++m) {
+      v = bms_data[i];
+      results.push((function() {
+        var len1, o, ref, results1;
+        ref = v[name].timing;
+        results1 = [];
+        for (j = o = 0, len1 = ref.length; o < len1; j = ++o) {
+          t = ref[j];
+          if (t != null) {
+            if (v[name].val != null) {
+              results1.push(arr.push({
+                timing: t,
+                val: v[name].val[j]
+              }));
+            } else if (v[name].id != null) {
+              results1.push(arr.push({
+                timing: t,
+                id: v[name].id[j]
+              }));
+            } else {
+              results1.push(void 0);
+            }
+          }
+        }
+        return results1;
+      })());
     }
     return results;
   };

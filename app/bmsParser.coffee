@@ -17,6 +17,11 @@ class BmsParser
       data : []
       totalNote : 0
 
+      # OPTIMIZE:
+      bgms      : []
+      animation : []
+      bpms      : []
+
     @wavMessages = []
 
   parse : (bms_text) ->
@@ -24,6 +29,14 @@ class BmsParser
       _parse.call @, row
 
     _modifyAfterParse.call @
+    # OPTIMIZE:bpm,bmp,wavは小節に依存しないよう配列に詰めなおす
+    @bms.bpms[0] =
+      timing : 0
+      val : @bms.bpm
+    _serialize @bms.bpms, "bpm", @bms.data
+    _serialize @bms.animation, "bmp", @bms.data
+    _serialize @bms.bgms, "wav", @bms.data
+
     @bms.totalNote = _calcTotalNote.call @
 
     return @bms
@@ -225,6 +238,19 @@ class BmsParser
       bar.wav.timing.push w.timing
       bar.wav.id.push w.id
 
+  # OPTIMIZE: bpm,bmp,wavは小節に依存しないよう配列に詰めなおす
+  _serialize = (arr, name, bms_data) ->
+    for v, i in bms_data
+      for t, j in v[name].timing when t?
+        if v[name].val?
+          arr.push
+            timing : t
+            val : v[name].val[j]
+        else if v[name].id?
+          arr.push
+            timing : t
+            id : v[name].id[j]
+            
   _calcTotalNote = () ->
     @bms.data.reduce ( (t, d) -> t +
       d.note.key.reduce ((nt, k) -> nt + k.id.length), 0), 0
