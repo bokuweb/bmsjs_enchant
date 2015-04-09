@@ -13,22 +13,17 @@ class Loader
     console.log @_prefix
     $.ajax
       url: url
-      success: @_start
+      success: (bms)=>
+        parser = new Parser()
+        @_bms = parser.parse bms
+        #console.dir @_bms
+        @_sys.preload @_srcs if @srcs?
+        # preload *.wav
+        @_sys.preload @_prefix + v for k, v of @_bms.wav when v?
+        # preload *.bmp
+        @_sys.preload @_prefix + v for k, v of @_bms.bmp when v?
+        # loadend
+        @_sys.start().then => d.resolve @_bms
     d.promise()
-
-  _start : (bms) =>
-    parser = new Parser()
-    @_bms = parser.parse bms
-
-    @_sys.preload @_srcs if @srcs?
-
-    # preload *.wav
-    @_sys.preload @_prefix + v for k, v of @_bms.wav when v?
-
-    # preload *.bmp
-    @_sys.preload @_prefix + v for k, v of @_bms.bmp when v?
-
-    # loadend
-    @_sys.start().then -> d.resolve @_bms
 
 module.exports = Loader
