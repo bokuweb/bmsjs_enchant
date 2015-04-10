@@ -17,7 +17,7 @@ class Loader
         parser = new Parser()
         @_bms = parser.parse bms
         #console.dir @_bms
-        @_sys.preload @_srcs if @srcs?
+        @_sys.preload @_srcs
         # preload *.wav
         @_sys.preload @_prefix + v for k, v of @_bms.wav when v?
         # preload *.bmp

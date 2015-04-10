@@ -15,7 +15,7 @@ gulp.task 'lint', ->
 
 gulp.task 'appBuild', ['lint'],  ->
   browserify
-      entries : ['./app/test.coffee']
+      entries : ['./app/bms.coffee']
       extensions: ['.coffee', '.js']
     .transform 'coffeeify'
     .bundle()

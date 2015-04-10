@@ -18,9 +18,9 @@ class BmsParser
       totalNote : 0
 
       # OPTIMIZE:
-      bgms      : []
-      animation : []
-      bpms      : []
+      bgms       : []
+      animations : []
+      bpms       : []
 
     @wavMessages = []
 
@@ -34,7 +34,7 @@ class BmsParser
       timing : 0
       val : @bms.bpm
     _serialize @bms.bpms, "bpm", @bms.data
-    _serialize @bms.animation, "bmp", @bms.data
+    _serialize @bms.animations, "bmp", @bms.data
     _serialize @bms.bgms, "wav", @bms.data
 
     @bms.totalNote = _calcTotalNote.call @

@@ -63,52 +63,56 @@ describe 'Notes class test', ()->
 
   config =
     reaction : 200
-    rmoveTime : 500
+    removeTime : 5000
     judge :
       pgreat : 10
       great : 50
       good : 100
       bad : 150
       poor : 200
+      
 
   note = new Notes sys, res, timer, config
 
-  notes = []
-  notes.push
-    key : [
-      {id : [0], timing : [1000]}
-      {id : [1], timing : [1100]}
-      {id : [2], timing : [1200]}
-      {id : [3], timing : [1300]}
-      {id : [4], timing : [1400]}
-      {id : [5], timing : [1500]}
-      {id : [6], timing : [1600]}
-      {id : [7], timing : [1700]}
-    ]
+  data = []
+  data.push
+    note :
+      key : [
+        {id : [0], timing : [1000]}
+        {id : [1], timing : [1100]}
+        {id : [2], timing : [1200]}
+        {id : [3], timing : [1300]}
+        {id : [4], timing : [1400]}
+        {id : [5], timing : [1500]}
+        {id : [6], timing : [1600]}
+        {id : [7], timing : [1700]}
+      ]
 
-  notes.push
-    key : [
-      {id : [14], timing : [2700]}
-      {id : [13], timing : [2600]}
-      {id : [12], timing : [2500]}
-      {id : [11], timing : [2400]}
-      {id : [10], timing : [2300]}
-      {id : [9], timing : [2200]}
-      {id : [8], timing : [2100]}
-      {id : [15], timing : [2800]}
-    ]
+  data.push
+    note : 
+      key : [
+        {id : [14], timing : [2700]}
+        {id : [13], timing : [2600]}
+        {id : [12], timing : [2500]}
+        {id : [11], timing : [2400]}
+        {id : [10], timing : [2300]}
+        {id : [9], timing : [2200]}
+        {id : [8], timing : [2100]}
+        {id : [15], timing : [2800]}
+      ]
 
-  notes.push
-    key : [
-      {id : [22], timing : [3700]}
-      {id : [21], timing : [3600]}
-      {id : [20], timing : [3500]}
-      {id : [19], timing : [3400]}
-      {id : [18], timing : [3300]}
-      {id : [17], timing : [3200]}
-      {id : [16], timing : [3100]}
-      {id : [23], timing : [3800]}
-    ]
+  data.push
+    note : 
+      key : [
+        {id : [22], timing : [3700]}
+        {id : [21], timing : [3600]}
+        {id : [20], timing : [3500]}
+        {id : [19], timing : [3400]}
+        {id : [18], timing : [3300]}
+        {id : [17], timing : [3200]}
+        {id : [16], timing : [3100]}
+        {id : [23], timing : [3800]}
+      ]
 
   bpms = [
     {timing: 800  ,val: 140}
@@ -121,7 +125,7 @@ describe 'Notes class test', ()->
 
   bms = 
    bpms : bpms
-   notes : notes
+   data : data
 
   genTime = [0, 1000, 2000, 3000]
 
@@ -195,8 +199,8 @@ describe 'Notes class test', ()->
     note.start on
     timer.start()
     promises = []
-    for n in notes
-      for key in n.key
+    for n in bms.data
+      for key in n.note.key
         for time in key.timing
           promises.push do ->
             d = new $.Deferred
@@ -228,8 +232,8 @@ describe 'Notes class test', ()->
     index = 0
     id = null
 
-    for n in notes
-      for key in n.key
+    for n in bms.data
+      for key in n.note.key
         for time in key.timing
           promises.push do ->
             d = new $.Deferred

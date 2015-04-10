@@ -1,24 +1,63 @@
-skin : 
-  frameImage : 
-    type : "image"
-    src : "./res/test2.png"
-    width : 40
-    height : 80
-    x : 0
-    y : 0
-    z : 1
 
-  turnTableImage :
+fallObj :
+  fallDist : 400
+  keyNum : 8
+  offset : 35
+  margin : 2
+  zIndex : 4
+  nodeImage : 
     type : "image"
-    src : "./res/test.png"
-    width : 40
-    height : 80
+    src : "./res/node.png"
+    width : 194
+    height : 1
     x : 0
-    y : 0
+    y : -10
+    z : 1  
+  noteTurntableImage : 
+    type : "image"
+    src : "./res/note-turntable.png"
+    width : 41
+    height : 6
+    x : 0
+    y : -10
     z : 1
+  noteWhiteImage : 
+    type : "image"
+    src : "./res/note-white.png"
+    width : 22
+    height : 6
+    x : 0
+    y : -10
+    z : 1
+  noteBlackImage : 
+    type : "image"
+    src : "./res/note-black.png"
+    width : 17
+    height : 6
+    x : 0
+    y : -10
+    z : 1
+keydownEffect : 
+  y : 0
+  z : 1
+  turntableKeydownImage : 
+    type : "image"
+    src : "./res/turntable-keydown.png"
+    width : 41
+    height : 316
+  whiteKeydownImage : 
+    type : "image"
+    src : "./res/white-keydown.png"
+    width : 22
+    height : 316
+  blackKeydownImage : 
+    type : "image"
+    src : "./res/black-keydown.png"
+    width : 17
+    height : 316
 
-stats : 
-  scoreLabel : 
+stats :
+  scoreLabel :
     type : "label"
     align : "left"
     font : "9px D7MBI"

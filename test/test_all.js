@@ -7804,8 +7804,8 @@ MeasureNodes = (function(superClass) {
       node.x = res.nodeImage.x;
       node.y = res.nodeImage.y;
       this._appendFallParams(node, bpms, time, res.fallDist);
-      this._genTime.push(time);
       time = this._getGenTime(node, res.fallDist);
+      this._genTime.push(time);
       this._nodes.push(node);
     }
     return this._genTime;
@@ -7928,20 +7928,19 @@ Notes = (function(superClass) {
   };
 
   Notes.prototype._generate = function(bms, measure, time) {
-    var base, black, bpms, fallDist, i, j, k, key, l, len, len1, note, notes, ref, ref1, timing, turntable, white;
+    var base, black, bpms, fallDist, i, j, k, key, l, len, len1, note, ref, ref1, timing, turntable, white;
     turntable = this._res.fallObj.noteTurntableImage;
     white = this._res.fallObj.noteWhiteImage;
     black = this._res.fallObj.noteBlackImage;
     fallDist = this._res.fallObj.fallDist;
     bpms = bms.bpms;
-    notes = bms.notes;
     if ((base = this._notes)[measure] == null) {
       base[measure] = [];
     }
-    if (notes[measure] == null) {
+    if (bms.data[measure] == null) {
       return;
     }
-    ref = notes[measure].key;
+    ref = bms.data[measure].note.key;
     for (i = k = 0, len = ref.length; k < len; i = ++k) {
       key = ref[i];
       ref1 = key.timing;
@@ -18252,7 +18251,7 @@ describe('MeasureNodes class test', function() {
       val: 240
     }
   ];
-  correctGenerationtiming = [0, 457, 3000];
+  correctGenerationtiming = [457, 3000, 5000];
   fallDistance = 400;
   it('should return node generation timing list when nodes created', function() {
     var generationTime;
@@ -18300,7 +18299,7 @@ utils = require('./utils');
 $ = require('jquery');
 
 describe('Notes class test', function() {
-  var bms, bpms, capNum, config, genTime, id, judgeNum, keydownArr, note, notes, res, sys, timer, wavNum;
+  var bms, bpms, capNum, config, data, genTime, id, judgeNum, keydownArr, note, res, sys, timer, wavNum;
   this.timeout(10000);
   capNum = 0;
   id = 0;
@@ -18366,7 +18365,7 @@ describe('Notes class test', function() {
   };
   config = {
     reaction: 200,
-    rmoveTime: 500,
+    removeTime: 5000,
     judge: {
       pgreat: 10,
       great: 50,
@@ -18376,93 +18375,99 @@ describe('Notes class test', function() {
     }
   };
   note = new Notes(sys, res, timer, config);
-  notes = [];
-  notes.push({
-    key: [
-      {
-        id: [0],
-        timing: [1000]
-      }, {
-        id: [1],
-        timing: [1100]
-      }, {
-        id: [2],
-        timing: [1200]
-      }, {
-        id: [3],
-        timing: [1300]
-      }, {
-        id: [4],
-        timing: [1400]
-      }, {
-        id: [5],
-        timing: [1500]
-      }, {
-        id: [6],
-        timing: [1600]
-      }, {
-        id: [7],
-        timing: [1700]
-      }
-    ]
+  data = [];
+  data.push({
+    note: {
+      key: [
+        {
+          id: [0],
+          timing: [1000]
+        }, {
+          id: [1],
+          timing: [1100]
+        }, {
+          id: [2],
+          timing: [1200]
+        }, {
+          id: [3],
+          timing: [1300]
+        }, {
+          id: [4],
+          timing: [1400]
+        }, {
+          id: [5],
+          timing: [1500]
+        }, {
+          id: [6],
+          timing: [1600]
+        }, {
+          id: [7],
+          timing: [1700]
+        }
+      ]
+    }
   });
-  notes.push({
-    key: [
-      {
-        id: [14],
-        timing: [2700]
-      }, {
-        id: [13],
-        timing: [2600]
-      }, {
-        id: [12],
-        timing: [2500]
-      }, {
-        id: [11],
-        timing: [2400]
-      }, {
-        id: [10],
-        timing: [2300]
-      }, {
-        id: [9],
-        timing: [2200]
-      }, {
-        id: [8],
-        timing: [2100]
-      }, {
-        id: [15],
-        timing: [2800]
-      }
-    ]
+  data.push({
+    note: {
+      key: [
+        {
+          id: [14],
+          timing: [2700]
+        }, {
+          id: [13],
+          timing: [2600]
+        }, {
+          id: [12],
+          timing: [2500]
+        }, {
+          id: [11],
+          timing: [2400]
+        }, {
+          id: [10],
+          timing: [2300]
+        }, {
+          id: [9],
+          timing: [2200]
+        }, {
+          id: [8],
+          timing: [2100]
+        }, {
+          id: [15],
+          timing: [2800]
+        }
+      ]
+    }
   });
-  notes.push({
-    key: [
-      {
-        id: [22],
-        timing: [3700]
-      }, {
-        id: [21],
-        timing: [3600]
-      }, {
-        id: [20],
-        timing: [3500]
-      }, {
-        id: [19],
-        timing: [3400]
-      }, {
-        id: [18],
-        timing: [3300]
-      }, {
-        id: [17],
-        timing: [3200]
-      }, {
-        id: [16],
-        timing: [3100]
-      }, {
-        id: [23],
-        timing: [3800]
-      }
-    ]
+  data.push({
+    note: {
+      key: [
+        {
+          id: [22],
+          timing: [3700]
+        }, {
+          id: [21],
+          timing: [3600]
+        }, {
+          id: [20],
+          timing: [3500]
+        }, {
+          id: [19],
+          timing: [3400]
+        }, {
+          id: [18],
+          timing: [3300]
+        }, {
+          id: [17],
+          timing: [3200]
+        }, {
+          id: [16],
+          timing: [3100]
+        }, {
+          id: [23],
+          timing: [3800]
+        }
+      ]
+    }
   });
   bpms = [
     {
@@ -18487,7 +18492,7 @@ describe('Notes class test', function() {
   ];
   bms = {
     bpms: bpms,
-    notes: notes
+    data: data
   };
   genTime = [0, 1000, 2000, 3000];
   judgeNum = {
@@ -18603,19 +18608,20 @@ describe('Notes class test', function() {
     return wavNum++;
   });
   it('note create and update test with auto mode', function(done) {
-    var i, j, k, key, len, len1, len2, n, promises, ref, ref1, time;
+    var i, j, k, key, len, len1, len2, n, promises, ref, ref1, ref2, time;
     note.init(bms, genTime);
     note.start(true);
     timer.start();
     promises = [];
-    for (i = 0, len = notes.length; i < len; i++) {
-      n = notes[i];
-      ref = n.key;
-      for (j = 0, len1 = ref.length; j < len1; j++) {
-        key = ref[j];
-        ref1 = key.timing;
-        for (k = 0, len2 = ref1.length; k < len2; k++) {
-          time = ref1[k];
+    ref = bms.data;
+    for (i = 0, len = ref.length; i < len; i++) {
+      n = ref[i];
+      ref1 = n.note.key;
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        key = ref1[j];
+        ref2 = key.timing;
+        for (k = 0, len2 = ref2.length; k < len2; k++) {
+          time = ref2[k];
           promises.push((function() {
             var d;
             d = new $.Deferred;
@@ -18642,21 +18648,22 @@ describe('Notes class test', function() {
     });
   });
   it('note create and update test without auto mode', function(done) {
-    var i, index, j, k, key, len, len1, len2, n, promises, ref, ref1, time;
+    var i, index, j, k, key, len, len1, len2, n, promises, ref, ref1, ref2, time;
     note.init(bms, genTime);
     note.start(false);
     timer.start();
     promises = [];
     index = 0;
     id = null;
-    for (i = 0, len = notes.length; i < len; i++) {
-      n = notes[i];
-      ref = n.key;
-      for (j = 0, len1 = ref.length; j < len1; j++) {
-        key = ref[j];
-        ref1 = key.timing;
-        for (k = 0, len2 = ref1.length; k < len2; k++) {
-          time = ref1[k];
+    ref = bms.data;
+    for (i = 0, len = ref.length; i < len; i++) {
+      n = ref[i];
+      ref1 = n.note.key;
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        key = ref1[j];
+        ref2 = key.timing;
+        for (k = 0, len2 = ref2.length; k < len2; k++) {
+          time = ref2[k];
           promises.push((function() {
             var d;
             d = new $.Deferred;

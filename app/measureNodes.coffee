@@ -27,11 +27,9 @@ class MeasureNodes extends FallObj
       node.timing = v.timing
       node.x = res.nodeImage.x
       node.y = res.nodeImage.y
-      #node.measure = i
-
       @_appendFallParams node, bpms, time, res.fallDist
-      @_genTime.push time
       time = @_getGenTime node, res.fallDist
+      @_genTime.push time
       @_nodes.push node
     @_genTime
 
