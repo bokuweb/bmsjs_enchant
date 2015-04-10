@@ -18,7 +18,7 @@ class Notes extends FallObj
   init : (bms, genTime)->
     @_genTime = genTime
     @_index = 0
-    @_notes.length = 0    
+    @_notes.length = 0
     @_group = @_sys.createGroup()
     @_sys.addChild @_sys.getCurrentScene(), @_group, @_res.fallObj.zIndex
     @_generate bms, measure, time for time, measure in @_genTime
@@ -35,11 +35,10 @@ class Notes extends FallObj
     black = @_res.fallObj.noteBlackImage
     fallDist = @_res.fallObj.fallDist
     bpms = bms.bpms
-    notes = bms.notes
     @_notes[measure] ?= []
 
-    return unless notes[measure]?
-    for key, i in notes[measure].key
+    return unless bms.data[measure]?
+    for key, i in bms.data[measure].note.key
       for timing, j in key.timing
         switch i
           when 0, 2, 4, 6

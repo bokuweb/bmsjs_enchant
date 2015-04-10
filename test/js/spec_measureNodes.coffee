@@ -38,9 +38,9 @@ describe 'MeasureNodes class test', ()->
   ]
 
   correctGenerationtiming = [
-    0
     457
     3000
+    5000
   ]
   fallDistance = 400
 

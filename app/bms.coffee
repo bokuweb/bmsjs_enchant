@@ -2,7 +2,8 @@ Sys = require './gamesys'
 Timer = require './timer'
 Res = require './resource'
 Loader = require './loader'
-Nodes  = require './measureNodes'
+MeasureNodes  = require './measureNodes'
+Notes  = require './notes'
 
 class Bms
 
@@ -11,7 +12,8 @@ class Bms
     @_timer = new Timer()
     @_res = new Res()
     @_loader = new Loader @_sys
-    @_nodes = new Nodes @_sys, @_timer
+    @_measureNodes = new MeasureNodes @_sys, @_timer
+
 
   start : (bmsUrl, themeUrl)->
     load = =>
@@ -25,12 +27,25 @@ class Bms
   _init : (@_bms)=>
     console.dir @_bms
     console.log "initialize..."
-    genTime =  @_nodes.init @_res.get().objs.fallObj, @_bms.bpms, @_bms.data
+    genTime =  @_measureNodes.init @_res.get().objs.fallObj, @_bms.bpms, @_bms.data
+    console.dir genTime
+    config =
+      reaction : 200
+      removeTime : 500
+      judge :
+        pgreat : 10
+        great  : 50
+        good   : 100
+        bad    : 150
+        poor   : 200
+    @_notes = new Notes @_sys, {fallObj:@_res.get().objs.fallObj, effect:@_res.get().objs.keydownEffect}, @_timer, config
+    @_notes.init @_bms, genTime
     @_play()
 
   _play : ->
     console.log "play..."
-    @_nodes.start()
+    @_measureNodes.start()
+    @_notes.start()
     @_timer.start()
 
 
