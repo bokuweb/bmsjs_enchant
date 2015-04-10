@@ -70,6 +70,7 @@ describe 'Notes class test', ()->
       good : 100
       bad : 150
       poor : 200
+      
 
   note = new Notes sys, res, timer, config
 
