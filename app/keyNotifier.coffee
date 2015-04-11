@@ -18,10 +18,11 @@ class KeyNotifier extends EventObserver
   # @param id - key ID
   # @param listener - listener
   #
-  addListener: (name, listener, id)->
-    @on name, listener, id
+  addListener: (key, listener, id)->
+    @on key, listener, id
 
   _checkKey : (e)=>
+    console.log "_checkkey"
     time = @_timer.get()
     @trigger e.keyCode, time
 
