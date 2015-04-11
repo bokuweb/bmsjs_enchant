@@ -3,8 +3,9 @@ Timer = require './timer'
 Res = require './resource'
 Loader = require './loader'
 MeasureNodes  = require './measureNodes'
-Notes  = require './notes'
-Audio  = require './audio'
+Notes = require './notes'
+Audio = require './audio'
+KeyNotifier = require './keyNotifier'
 
 class Bms
 
@@ -14,6 +15,7 @@ class Bms
     @_res = new Res()
     @_loader = new Loader @_sys
     @_measureNodes = new MeasureNodes @_sys, @_timer
+    @_keyNotifier = new KeyNotifier @_timer
 
   start : (bmsUrl, themeUrl)->
     m = /^.+\//.exec bmsUrl
@@ -42,8 +44,20 @@ class Bms
         poor   : 200
     @_notes = new Notes @_sys, {fallObj:@_res.get().objs.fallObj, effect:@_res.get().objs.keydownEffect}, @_timer, config
     @_notes.init @_bms, genTime
+    @_notes.addListener 'hit', @_onHit
     @_audio = new Audio @_sys, @_timer, @_bms.bgms
     @_audio.init @_bms.wav, @_prefix
+    # TODO : add to argument
+    keyConfig = [
+      'Z'.charCodeAt(0)
+      'S'.charCodeAt(0)
+      'X'.charCodeAt(0)
+      'D'.charCodeAt(0)
+      'C'.charCodeAt(0)
+      'F'.charCodeAt(0)
+      'V'.charCodeAt(0)
+      16]
+    @_keyNotifier.addListener v, @_notes.onKeydown, id for v, id in keyConfig
     @_play()
 
   _play : ->
@@ -51,8 +65,12 @@ class Bms
     @_measureNodes.start()
     @_notes.start()
     @_audio.bgmStart()
+    @_keyNotifier.start()
     @_timer.start()
 
+  _onHit : (name, wavId)=>
+    console.log "onhit"
+    @_audio.play wavId
 
 bms = new Bms()
 bms.start 'http://localhost:8080/bms/normal.bms', 'http://localhost:8080/res/resource.json'

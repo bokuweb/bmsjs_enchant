@@ -7668,12 +7668,13 @@ KeyNotifier = (function(superClass) {
     return document.removeEventListener('keydown', this._checkKey, false);
   };
 
-  KeyNotifier.prototype.addListener = function(name, listener, id) {
-    return this.on(name, listener, id);
+  KeyNotifier.prototype.addListener = function(key, listener, id) {
+    return this.on(key, listener, id);
   };
 
   KeyNotifier.prototype._checkKey = function(e) {
     var time;
+    console.log("_checkkey");
     time = this._timer.get();
     return this.trigger(e.keyCode, time);
   };
@@ -7801,7 +7802,7 @@ MeasureNodes = (function(superClass) {
       v = nodes[i];
       node = this._sys.createSprite(res.nodeImage.width, res.nodeImage.height, res.nodeImage.src);
       node.timing = v.timing;
-      node.x = res.nodeImage.x;
+      node.x = res.offset;
       node.y = res.nodeImage.y;
       this._appendFallParams(node, bpms, time, res.fallDist);
       time = this._getGenTime(node, res.fallDist);
@@ -7896,6 +7897,7 @@ Notes = (function(superClass) {
     this._res = _res;
     this._timer = _timer;
     this._config = _config;
+    this.onKeydown = bind(this.onKeydown, this);
     this._add = bind(this._add, this);
     this._notifier = new EventObserver();
     this._keyDownEffect = new KeydownEffect(this._sys);
@@ -8083,6 +8085,7 @@ Notes = (function(superClass) {
   Notes.prototype.onKeydown = function(name, time, id) {
     var diffTime, k, len, note, ref;
     this._keyDownEffect.show(id);
+    console.log("onkeydown");
     ref = this._group.childNodes;
     for (k = 0, len = ref.length; k < len; k++) {
       note = ref[k];

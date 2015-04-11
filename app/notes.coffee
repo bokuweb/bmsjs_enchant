@@ -151,8 +151,9 @@ class Notes extends FallObj
   #
   # keydown listener
   #
-  onKeydown : (name, time, id)->
+  onKeydown : (name, time, id)=>
     @_keyDownEffect.show id
+    console.log "onkeydown"
     for note in @_group.childNodes when note.key is id
       diffTime = note.timing - time
       unless note.clear
