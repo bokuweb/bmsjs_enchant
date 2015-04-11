@@ -47,7 +47,7 @@ class Bms
     @_notes.addListener 'hit', @_onHit
     @_audio = new Audio @_sys, @_timer, @_bms.bgms
     @_audio.init @_bms.wav, @_prefix
-    # TODO : add to argument
+    # FIXME : move to argument
     keyConfig = [
       'Z'.charCodeAt(0)
       'S'.charCodeAt(0)
@@ -69,7 +69,6 @@ class Bms
     @_timer.start()
 
   _onHit : (name, wavId)=>
-    console.log "onhit"
     @_audio.play wavId
 
 bms = new Bms()
