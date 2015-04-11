@@ -21,8 +21,8 @@ class Bms
       @_loader.load bmsUrl, @_res.get().srcs
 
     @_res.load themeUrl
-      .then(load)
-      .then(@_init)
+      .then load
+      .then @_init
 
   _init : (@_bms)=>
     console.dir @_bms
@@ -31,7 +31,7 @@ class Bms
     console.dir genTime
     config =
       reaction : 200
-      removeTime : 500
+      removeTime : 200
       judge :
         pgreat : 10
         great  : 50
