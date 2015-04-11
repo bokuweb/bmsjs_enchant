@@ -4,6 +4,7 @@ Res = require './resource'
 Loader = require './loader'
 MeasureNodes  = require './measureNodes'
 Notes  = require './notes'
+Audio  = require './audio'
 
 class Bms
 
@@ -14,15 +15,16 @@ class Bms
     @_loader = new Loader @_sys
     @_measureNodes = new MeasureNodes @_sys, @_timer
 
-
   start : (bmsUrl, themeUrl)->
+    m = /^.+\//.exec bmsUrl
+    @_prefix = m[0] if m
     load = =>
       console.dir @_res.get().srcs
-      @_loader.load bmsUrl, @_res.get().srcs
+      @_loader.load bmsUrl, @_prefix, @_res.get().srcs
 
     @_res.load themeUrl
-      .then(load)
-      .then(@_init)
+      .then load
+      .then @_init
 
   _init : (@_bms)=>
     console.dir @_bms
@@ -31,7 +33,7 @@ class Bms
     console.dir genTime
     config =
       reaction : 200
-      removeTime : 500
+      removeTime : 200
       judge :
         pgreat : 10
         great  : 50
@@ -40,12 +42,15 @@ class Bms
         poor   : 200
     @_notes = new Notes @_sys, {fallObj:@_res.get().objs.fallObj, effect:@_res.get().objs.keydownEffect}, @_timer, config
     @_notes.init @_bms, genTime
+    @_audio = new Audio @_sys, @_timer, @_bms.bgms
+    @_audio.init @_bms.wav, @_prefix
     @_play()
 
   _play : ->
     console.log "play..."
     @_measureNodes.start()
     @_notes.start()
+    @_audio.bgmStart()
     @_timer.start()
 
 

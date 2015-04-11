@@ -5,47 +5,43 @@ fallObj :
   offset : 35
   margin : 2
   zIndex : 4
-  nodeImage : 
+  nodeImage :
     type : "image"
     src : "./res/node.png"
     width : 194
     height : 1
-    x : 0
     y : -10
-    z : 1  
-  noteTurntableImage : 
+    z : 1
+  noteTurntableImage :
     type : "image"
     src : "./res/note-turntable.png"
     width : 41
     height : 6
-    x : 0
     y : -10
     z : 1
-  noteWhiteImage : 
+  noteWhiteImage :
     type : "image"
     src : "./res/note-white.png"
     width : 22
     height : 6
-    x : 0
     y : -10
     z : 1
-  noteBlackImage : 
+  noteBlackImage :
     type : "image"
     src : "./res/note-black.png"
     width : 17
     height : 6
-    x : 0
     y : -10
     z : 1
-keydownEffect : 
+keydownEffect :
   y : 0
   z : 1
-  turntableKeydownImage : 
+  turntableKeydownImage :
     type : "image"
     src : "./res/turntable-keydown.png"
     width : 41
     height : 316
-  whiteKeydownImage : 
+  whiteKeydownImage :
     type : "image"
     src : "./res/white-keydown.png"
     width : 22

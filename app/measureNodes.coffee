@@ -25,7 +25,7 @@ class MeasureNodes extends FallObj
     for v, i in nodes
       node = @_sys.createSprite res.nodeImage.width, res.nodeImage.height, res.nodeImage.src
       node.timing = v.timing
-      node.x = res.nodeImage.x
+      node.x = res.offset
       node.y = res.nodeImage.y
       @_appendFallParams node, bpms, time, res.fallDist
       time = @_getGenTime node, res.fallDist
