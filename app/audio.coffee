@@ -10,7 +10,7 @@ class Audio
     # configure wave file
     @_wav[k] = @_sys.creatAudio prefix + v for k, v of res
 
-  play : (audio)-> @_sys.playAudio audio
+  play : (id)-> @_sys.playAudio @_wav[id]
 
   bgmStart : ->
     @_scheduleId = @_sys.setScheduler @_update
@@ -25,7 +25,7 @@ class Audio
   _update : =>
     time = @_timer.get()
     while time >= @_bgms[@_index]?.timing
-      @play @_wav[@_bgms[@_index].val]
+      @play @_bgms[@_index].id
       @_index++
 
 module.exports = Audio

@@ -1,4 +1,4 @@
-class Bmp
+class Animation
   POOR_INDICATOR_TIME : 200
 
   constructor : (@_sys, @_timer, @_srcs, @_bmps)->
@@ -31,4 +31,4 @@ class Bmp
       @_sys.setImage @_bmpSprite, @_srcs[@_bmps[0].id] unless @_isPoor
       @_index++
 
-module.exports = Bmp
+module.exports = Animation
