@@ -1,0 +1,20 @@
+{
+  "name": "tools",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "gulp": "~3.8.11",
+    "gulp-gm": "0.0.7",
+    "gulp-param": "~0.6.3",
+    "coffeeify": "~1.0.0",
+    "coffee-script": "~1.9.1",
+    "vinyl-fs": "~1.0.0",
+    "run-sequence": "~1.0.2"
+  }
+}
