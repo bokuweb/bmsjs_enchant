@@ -63,7 +63,7 @@ class Bms
   _play : ->
     console.log "play..."
     @_measureNodes.start()
-    @_notes.start()
+    @_notes.start on
     @_audio.bgmStart()
     @_keyNotifier.start()
     @_timer.start()
@@ -72,4 +72,4 @@ class Bms
     @_audio.play wavId
 
 bms = new Bms()
-bms.start 'http://localhost:8080/bms/normal.bms', 'http://localhost:8080/res/resource.json'
+bms.start 'http://localhost:8080/bms/va.bms', 'http://localhost:8080/res/resource.json'
