@@ -47,7 +47,7 @@ class Bms
     @_notes.addListener 'hit', @_onHit
     @_audio = new Audio @_sys, @_timer, @_bms.bgms
     @_audio.init @_bms.wav, @_prefix
-    # TODO : add to argument
+    # FIXME : move to argument
     keyConfig = [
       'Z'.charCodeAt(0)
       'S'.charCodeAt(0)
@@ -63,14 +63,13 @@ class Bms
   _play : ->
     console.log "play..."
     @_measureNodes.start()
-    @_notes.start()
+    @_notes.start on
     @_audio.bgmStart()
     @_keyNotifier.start()
     @_timer.start()
 
   _onHit : (name, wavId)=>
-    console.log "onhit"
     @_audio.play wavId
 
 bms = new Bms()
-bms.start 'http://localhost:8080/bms/normal.bms', 'http://localhost:8080/res/resource.json'
+bms.start 'http://localhost:8080/bms/va.bms', 'http://localhost:8080/res/resource.json'
