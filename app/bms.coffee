@@ -1,11 +1,12 @@
-Sys = require './gamesys'
-Timer = require './timer'
-Res = require './resource'
-Loader = require './loader'
-MeasureNodes  = require './measureNodes'
-Notes = require './notes'
-Audio = require './audio'
-KeyNotifier = require './keyNotifier'
+Sys          = require './gamesys'
+Timer        = require './timer'
+Res          = require './resource'
+Loader       = require './loader'
+MeasureNodes = require './measureNodes'
+Notes        = require './notes'
+Audio        = require './audio'
+KeyNotifier  = require './keyNotifier'
+Skin         = require './skin'
 
 class Bms
 
@@ -33,6 +34,10 @@ class Bms
     console.log "initialize..."
     genTime =  @_measureNodes.init @_res.get().objs.fallObj, @_bms.bpms, @_bms.data
     console.dir genTime
+
+    skin = new Skin @_sys
+    skin.init @_res.get().objs.skin
+    # TODO: move
     config =
       reaction : 200
       removeTime : 200
@@ -72,4 +77,4 @@ class Bms
     @_audio.play wavId
 
 bms = new Bms()
-bms.start 'http://localhost:8080/bms/dq.bms', 'http://localhost:8080/res/resource.json'
+bms.start 'http://localhost:8080/bms/dq.bms', 'http://localhost:8080/res/skin.json'

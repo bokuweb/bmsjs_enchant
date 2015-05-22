@@ -1,3 +1,12 @@
+skin :
+  bodyImage :
+    type : "image"
+    src : "./res/body.png"
+    width : 640
+    height : 480
+    x : 0
+    y : 0
+    z : 0
 
 fallObj :
   fallDist : 320
@@ -33,6 +42,7 @@ fallObj :
     height : 6
     y : -10
     z : 1
+
 keydownEffect :
   y : 0
   z : 1
