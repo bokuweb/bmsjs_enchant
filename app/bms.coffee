@@ -72,4 +72,4 @@ class Bms
     @_audio.play wavId
 
 bms = new Bms()
-bms.start 'http://localhost:8080/bms/va.bms', 'http://localhost:8080/res/resource.json'
+bms.start 'http://localhost:8080/bms/dq.bms', 'http://localhost:8080/res/resource.json'
