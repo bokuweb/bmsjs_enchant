@@ -57,7 +57,7 @@ class Bms
       poorDecVal  : -0.4
       num         : 50
       clearVal    : 40
-    @_gauge.start 200
+    @_gauge.start 50
 
     @_notes = new Notes @_sys, {fallObj:@_res.get().objs.fallObj, effect:@_res.get().objs.keydownEffect}, @_timer, config
     @_notes.init @_bms, genTime

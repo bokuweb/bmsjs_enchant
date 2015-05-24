@@ -27,7 +27,7 @@ class Gauge
   get : -> ~~(@_rate.toFixed())
 
   # FIXME : use reques animatiomn frame
-  start : (period)-> @_intervalId = setInterval @_render.bind this, period
+  start : (period)-> @_intervalId = setInterval @_render, period
 
   stop : -> clearInterval @_intervalId
 
@@ -56,7 +56,7 @@ class Gauge
     @_sys.setText @_rateLabel, ~~(@_rate.toFixed()) + "%"
     @_render()
 
-  _render : ->
+  _render : =>
     for i in [0...@_num]
       if i > @_clearVal
         if @_rate - 6 <= i * 2 < @_rate - 2
