@@ -11,14 +11,14 @@ describe 'Notes class test', ()->
   id = 0
   sys = new Sys 640, 480
   timer = new Timer()
-  res = 
+  res =
     fallObj :
       fallDist : 400
       keyNum : 8
       offset : 35
       margin : 2
       zIndex : 4
-      noteTurntableImage : 
+      noteTurntableImage :
         type : "image"
         src : "../res/note-turntable.png"
         width : 41
@@ -26,7 +26,7 @@ describe 'Notes class test', ()->
         x : 0
         y : -10
         z : 1
-      noteWhiteImage : 
+      noteWhiteImage :
         type : "image"
         src : "../res/note-white.png"
         width : 22
@@ -34,7 +34,7 @@ describe 'Notes class test', ()->
         x : 0
         y : -10
         z : 1
-      noteBlackImage : 
+      noteBlackImage :
         type : "image"
         src : "../res/note-black.png"
         width : 17
@@ -89,7 +89,7 @@ describe 'Notes class test', ()->
       ]
 
   data.push
-    note : 
+    note :
       key : [
         {id : [14], timing : [2700]}
         {id : [13], timing : [2600]}
@@ -102,7 +102,7 @@ describe 'Notes class test', ()->
       ]
 
   data.push
-    note : 
+    note :
       key : [
         {id : [22], timing : [3700]}
         {id : [21], timing : [3600]}
@@ -166,29 +166,15 @@ describe 'Notes class test', ()->
     {key : 7, timing : 3800}
     ]
     
-  note.addListener 'pgreat', (name)->
-    console.log name
-    judgeNum.pgreat++
-
-  note.addListener 'great', (name)->
-    console.log name
-    judgeNum.great++
-
-  note.addListener 'good', (name)->
-    console.log name
-    judgeNum.good++
-
-  note.addListener 'bad', (name)->
-    console.log name
-    judgeNum.bad++
-
-  note.addListener 'poor', (name)->
-    console.log name
-    judgeNum.poor++
-
-  note.addListener 'epoor', (name)->
-    console.log name
-    judgeNum.epoor++
+  note.addListener 'judge', (name, judge)->
+    switch judge
+      when 'pgreat' then judgeNum.pgreat++
+      when 'great'  then judgeNum.great++
+      when 'good'   then judgeNum.good++
+      when 'bad'    then judgeNum.bad++
+      when 'poor'   then judgeNum.poor++
+      when 'epoor'  then judgeNum.epoor++
+      else
 
   note.addListener 'hit', (name, wav)->
     console.log "hit wav id = #{wav}"
@@ -275,7 +261,7 @@ describe 'Notes class test', ()->
       ]
     sys.start().then -> done()
 
-  after -> 
+  after ->
 
   beforeEach ->
     judgeNum =

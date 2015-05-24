@@ -7499,11 +7499,13 @@ module.exports = GameSys;
 
 
 },{"./enchant":3,"jquery":16}],7:[function(require,module,exports){
-var Gauge;
+var Gauge,
+  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 Gauge = (function() {
   function Gauge(_sys) {
     this._sys = _sys;
+    this._render = bind(this._render, this);
     this._gaugeSprite = [];
   }
 
@@ -7535,7 +7537,7 @@ Gauge = (function() {
   };
 
   Gauge.prototype.start = function(period) {
-    return this._intervalId = setInterval(this._render.bind(this, period));
+    return this._intervalId = setInterval(this._render, period);
   };
 
   Gauge.prototype.stop = function() {
@@ -18582,29 +18584,21 @@ describe('Notes class test', function() {
       timing: 3800
     }
   ];
-  note.addListener('pgreat', function(name) {
-    console.log(name);
-    return judgeNum.pgreat++;
-  });
-  note.addListener('great', function(name) {
-    console.log(name);
-    return judgeNum.great++;
-  });
-  note.addListener('good', function(name) {
-    console.log(name);
-    return judgeNum.good++;
-  });
-  note.addListener('bad', function(name) {
-    console.log(name);
-    return judgeNum.bad++;
-  });
-  note.addListener('poor', function(name) {
-    console.log(name);
-    return judgeNum.poor++;
-  });
-  note.addListener('epoor', function(name) {
-    console.log(name);
-    return judgeNum.epoor++;
+  note.addListener('judge', function(name, judge) {
+    switch (judge) {
+      case 'pgreat':
+        return judgeNum.pgreat++;
+      case 'great':
+        return judgeNum.great++;
+      case 'good':
+        return judgeNum.good++;
+      case 'bad':
+        return judgeNum.bad++;
+      case 'poor':
+        return judgeNum.poor++;
+      case 'epoor':
+        return judgeNum.epoor++;
+    }
   });
   note.addListener('hit', function(name, wav) {
     console.log("hit wav id = " + wav);
