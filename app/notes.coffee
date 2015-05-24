@@ -130,13 +130,14 @@ class Notes extends FallObj
     if note.clear and not note.hasJudged
       note.hasJudged = true
       judgement = @_judge.exec note.diffTime
-      @_notifier.trigger judgement
+      @_notifier.trigger 'judge', judgement
       return
 
     # FIXME : fix remove timing
     if time > note.timing + @_config.removeTime
       @_sys.removeChild @_group, note
-      @_notifier.trigger 'poor' unless note.clear
+      
+      @_notifier.trigger 'judge', 'poor' unless note.clear
       return
 
     # Auto Play
@@ -145,7 +146,7 @@ class Notes extends FallObj
         @_keyDownEffect.show note.key
         note.clear = true
         note.hasJudged = true
-        @_notifier.trigger 'pgreat'
+        @_notifier.trigger 'judge', 'pgreat'
         @_notifier.trigger 'hit', note.wav
 
   #
@@ -156,6 +157,7 @@ class Notes extends FallObj
     console.log "onkeydown"
     for note in @_group.childNodes when note.key is id
       diffTime = note.timing - time
+      # FIXME : fix hit logic
       unless note.clear
         if -@_config.reaction < diffTime < @_config.reaction
           note.clear = true
@@ -163,7 +165,7 @@ class Notes extends FallObj
           @_notifier.trigger 'hit', note.wav
           return
         else
-          @_notifier.trigger 'epoor'
+          @_notifier.trigger 'judge', 'epoor'
           return
 
 module.exports = Notes
