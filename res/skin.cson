@@ -6,10 +6,18 @@ skin :
     height : 480
     x : 0
     y : 0
+    z : 1
+  notesBgImage :
+    type : "image"
+    src : "./res/notes_bg.png"
+    width : 198
+    height : 322
+    x : 33
+    y : 0
     z : 0
-
+    
 fallObj :
-  fallDist : 320
+  fallDist : 321
   keyNum : 8
   offset : 35
   margin : 2
