@@ -7,9 +7,9 @@ Notes        = require './notes'
 Audio        = require './audio'
 KeyNotifier  = require './keyNotifier'
 Skin         = require './skin'
+Gauge        = require './gauge'
 
 class Bms
-
   constructor : ->
     @_sys = new Sys 640, 480
     @_timer = new Timer()
@@ -17,6 +17,7 @@ class Bms
     @_loader = new Loader @_sys
     @_measureNodes = new MeasureNodes @_sys, @_timer
     @_keyNotifier = new KeyNotifier @_timer
+    @_gauge = new Gauge @_sys
 
   start : (bmsUrl, themeUrl)->
     m = /^.+\//.exec bmsUrl
@@ -47,9 +48,21 @@ class Bms
         good   : 100
         bad    : 150
         poor   : 200
+
+    @_gauge.init @_res.get().objs.gauge,
+      initRate    : 100
+      greatIncVal : 1
+      goodIncVal  : 0.5
+      badDecVal   : -0.2
+      poorDecVal  : -0.4
+      num         : 50
+      clearVal    : 40
+    @_gauge.start 200
+
     @_notes = new Notes @_sys, {fallObj:@_res.get().objs.fallObj, effect:@_res.get().objs.keydownEffect}, @_timer, config
     @_notes.init @_bms, genTime
     @_notes.addListener 'hit', @_onHit
+    @_notes.addListener 'judge', @_onJudge
     @_audio = new Audio @_sys, @_timer, @_bms.bgms
     @_audio.init @_bms.wav, @_prefix
     # FIXME : move to argument
@@ -73,8 +86,12 @@ class Bms
     @_keyNotifier.start()
     @_timer.start()
 
-  _onHit : (name, wavId)=>
+  _onHit : (name, wavId) =>
     @_audio.play wavId
+
+  _onJudge : (name, judgement) =>
+    console.log judgement
+
 
 bms = new Bms()
 bms.start 'http://localhost:8080/bms/dq.bms', 'http://localhost:8080/res/skin.json'

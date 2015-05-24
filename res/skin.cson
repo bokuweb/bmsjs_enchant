@@ -15,7 +15,7 @@ skin :
     x : 33
     y : 0
     z : 0
-    
+
 fallObj :
   fallDist : 321
   keyNum : 8
@@ -85,10 +85,10 @@ gauge :
     type : "image"
     src : "./res/gauge.png"
     width : 4
-    height : 10
+    height : 12
     x : 25
     y : 387
-    z : 1
+    z : 10
 
   rateLabel : 
     type : "label"

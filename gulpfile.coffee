@@ -13,7 +13,7 @@ gulp.task 'lint', ->
     .pipe coffeelint()
     .pipe coffeelint.reporter()
 
-gulp.task 'appBuild', ['lint'],  ->
+gulp.task 'appBuild', [], ->
   browserify
       entries : ['./app/bms.coffee']
       extensions: ['.coffee', '.js']

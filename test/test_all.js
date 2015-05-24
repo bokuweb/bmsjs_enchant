@@ -7535,7 +7535,7 @@ Gauge = (function() {
   };
 
   Gauge.prototype.start = function(period) {
-    return this._intervalId = setInterval(this._render, period);
+    return this._intervalId = setInterval(this._render.bind(this, period));
   };
 
   Gauge.prototype.stop = function() {
@@ -8061,13 +8061,13 @@ Notes = (function(superClass) {
     if (note.clear && !note.hasJudged) {
       note.hasJudged = true;
       judgement = this._judge.exec(note.diffTime);
-      this._notifier.trigger(judgement);
+      this._notifier.trigger('judge', judgement);
       return;
     }
     if (time > note.timing + this._config.removeTime) {
       this._sys.removeChild(this._group, note);
       if (!note.clear) {
-        this._notifier.trigger('poor');
+        this._notifier.trigger('judge', 'poor');
       }
       return;
     }
@@ -8076,7 +8076,7 @@ Notes = (function(superClass) {
         this._keyDownEffect.show(note.key);
         note.clear = true;
         note.hasJudged = true;
-        this._notifier.trigger('pgreat');
+        this._notifier.trigger('judge', 'pgreat');
         return this._notifier.trigger('hit', note.wav);
       }
     }
@@ -8100,7 +8100,7 @@ Notes = (function(superClass) {
           this._notifier.trigger('hit', note.wav);
           return;
         } else {
-          this._notifier.trigger('epoor');
+          this._notifier.trigger('judge', 'epoor');
           return;
         }
       }

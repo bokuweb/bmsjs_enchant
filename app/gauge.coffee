@@ -26,7 +26,8 @@ class Gauge
 
   get : -> ~~(@_rate.toFixed())
 
-  start : (period)-> @_intervalId = setInterval @_render, period
+  # FIXME : use reques animatiomn frame
+  start : (period)-> @_intervalId = setInterval @_render.bind this, period
 
   stop : -> clearInterval @_intervalId
 
@@ -40,7 +41,6 @@ class Gauge
     @_sys.removeChild @_sys.getCurrentScene(), @_rateLabel
 
   update : (judge) ->
-    # FIXME：判定方法は再調査
     switch judge
       when "pgreat", "great"
         @_rate = if @_rate + @_greatIncVal > 100 then 100 else @_rate + @_greatIncVal
@@ -59,7 +59,8 @@ class Gauge
   _render : ->
     for i in [0...@_num]
       if i > @_clearVal
-        if @_rate - 6 <= i * 2 < @_rate - 2 then @_sys.setFrame @_gaugeSprite[i], ~~(Math.random() * 2) * 2
+        if @_rate - 6 <= i * 2 < @_rate - 2
+          @_sys.setFrame @_gaugeSprite[i], ~~(Math.random() * 2) * 2
         else if @_rate - 2 >= i * 2 then @_sys.setFrame @_gaugeSprite[i], 0
         else @_sys.setFrame @_gaugeSprite[i], 2
       else
